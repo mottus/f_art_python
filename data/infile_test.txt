@@ -1,0 +1,107 @@
+FRT CONFIG FILE
+VERSION 0.9
+# sampleplotid 818881
+
+SECTION frt
+	name FFC_field_plot_818881
+	job_id 1
+	refr_idx file refrind.dat
+	nlayers 4
+	groundmodel lambert understory_fertility3
+#	skymodel difsky skymodel_data
+	skymodel difsky 1
+	angles geometry
+	cubature 9 5
+	wavelength spectrum VNIR
+	correction_wl -10000
+	treeclass ellipsoid pine
+ 	treeclass ellipsoid spruce
+	treeclass ellipsoid deciduous
+END SECTION
+
+SECTION difsky skymodel_data
+	file skymodel_data.txt
+END SECTION
+
+SECTION geometry
+	sunzenith 40.5
+	viewnadir 30
+	viewazimuth 90
+	viewincrement 1
+END SECTION
+
+SECTION lambert understory_fertility3
+	file understory_fertility3.txt
+END SECTION
+
+SECTION spectrum VNIR
+	start 450
+	step 30
+#	number 2000
+	number 2
+END SECTION
+
+SECTION ellipsoid pine
+	species pine
+# 	density 0.0314
+	density 0.0157
+	crownlength 8.37
+	height 19.0
+	crownradius 1.76
+	trunkdiameter 22.0
+	dlw 7.84
+	slw 161.3
+	bailai 0.18
+	tdp 1.5
+	ssc 0.588
+	shl 0.1
+	wax_cf 1
+	br_refl file branchspectrum_pine.txt
+	tr_refl file trunkspectrum_pine.txt
+	leafmodel file leafspectrum_pine.txt
+	scale_needle TRUE
+END SECTION
+
+SECTION ellipsoid spruce
+	species spruce
+#	density 0.0629
+	density 0.0315
+	crownlength 11.21
+	height 16.5
+	crownradius 1.45
+	trunkdiameter 16.4
+	dlw 10.65
+	slw 202.0
+	bailai 0.18
+	tdp 1.5
+	ssc 0.644
+	shl 0.05
+	wax_cf 1
+	br_refl file branchspectrum_spruce.txt
+	tr_refl file trunkspectrum_spruce.txt
+	leafmodel file leafspectrum_spruce.txt
+	scale_needle TRUE
+END SECTION
+
+SECTION ellipsoid birch
+	species birch
+#	density 0.0472
+	density 0.0236
+	crownlength 8.88
+	height 20.0
+	crownradius 2.54
+	trunkdiameter 20.4
+	dlw 4.86
+	slw 74.07
+	bailai 0.15
+	tdp 1.5
+	ssc 1.0
+	shl 0.4
+	wax_cf 1
+	br_refl file branchspectrum_birch.txt
+	tr_refl file trunkspectrum_birch.txt
+	leafmodel file leafspectrum_birch.txt
+	scale_needle FALSE
+END SECTION
+
+#EOF
