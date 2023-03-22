@@ -1,11 +1,12 @@
-      subroutine corrfact( XC, N_XC, IC, N_IC, SPCIN, N_SPCIN, 
+!    part of the frt distribution
+!    Not used by the python version of FRT, python bindings for frt_wrapper.py
+	  subroutine corrfact( XC, N_XC, IC, N_IC, SPCIN, N_SPCIN, 
      & N_XOUT, N_SPCOUT, cf )
 !f2py intent(in) XC, N_XC, IC, N_IC, SPCIN, N_SPCIN, N_XOUT, N_SPCOUT
 !f2py intent(out) cf
 !  depends on comprt.o and all dependencies therein
 !  compile with sth like
 ! f2py.exe -c --compiler=mingw32 -m corrfact comprt.o bck3.o bgrdd.o enel3.o hetk8o.o hetk8s.o layer.o optmean.o rmsub.o spooi.o strmean.o twostr.o corrfact.f
-!     Not used by the python version of FRT, python bindings for frt_wrapper.py
 !     Compute the correctcompion factor for matching frt first- and higher-order scattering
 !     See documentation and Mõttus, M., Stenberg, P. & Rautiainen, M. (2007). Photon recollision 
 !       probability in heterogeneous forest canopies: compatibility with a hybrid GO model. 

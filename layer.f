@@ -1,4 +1,5 @@
-      subroutine layer
+!   part of the fortran-only version of FRT
+	  subroutine layer
      & (thets, thetv, ggs, ggv, ggj, ul, rrl, ttl,
      & rdd, tdd, rdo, tdo, rsd, tsd, rso)
 c

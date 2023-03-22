@@ -2,6 +2,7 @@
      & ( ncl, stdns, htr, hc1, hc2, dbh, rlai, rbai, clmpsh, tlty,
      & tlaief, tbai, rlfcl, tlfcl, rnlf, rbrnc, rtrnk,
      & rleff, tleff, rneff, rty, rrs, ttt, utot, rteff, tteff)
+c   part of the fortran-only version of FRT
 ! NOTE: not used by the python version of frt, f2py definitions provided for testing
 !f2py intent(in) ncl, stdns, htr, hc1, hc2, dbh, rlai, rbai, clmpsh, tlty, tlaief, tbai, rlfcl, tlfcl, rnlf, rbrnc, rtrnk 
 !f2py intent(out) rleff, tleff, rneff, rty, rrs, ttt, utot, rteff, tteff

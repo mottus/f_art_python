@@ -35,7 +35,7 @@ frt.o: frt.f $(INCL1)
 	$(GG) $(GFLAGS) $<
 
 frt: $(OBJ) $(OBJ1) $(INCL) 
-	$(GG) $(LFLAGS) $@ $(OBJ1) $(OBJ);
+	$(GG) $(LFLAGS) $@ $(OBJ1) $(OBJ)
 
 #frt: $(OBJ) $(OBJ1) $(INCL)
 #	$(GG) $(LFLAGS) $@ $(OBJ1) $(OBJ); \

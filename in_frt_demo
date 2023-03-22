@@ -1,0 +1,218 @@
+FRT CONFIG FILE
+VERSION 0.9
+# this is the FRT configuration file in its new format
+# the first line of the file has to be FRT CONFIG FILE, the second line containing
+# version information (of config file, not FRT!) is currently not used. However, if
+# changes will be introduced, it might be checked in the future.
+# Rules are simple: a line starting with # is a comment
+# Data are divided into SECTION's, general format
+# SECTION <section_type> <section_name>
+#  <data line1>
+#  <data line2>
+#  ...
+# END SECTION
+# input is CASE SENSITIVE: control words (like SECTION) are in uppercase, section
+# type in lowercase, section names preferably in lowercase, but the same case to be
+# used when referring to a section and when defining it.
+# Blank lines are ignored and also spaces in the beginning of a line, so indent at
+# your will. The only formally required section is frt (no name is required, the
+# first section of this type is used), this section should contain referances to
+# at least one treeclass SECTION, and also atmosphere, viewconfig, and undergrowth
+# SECTIONs. The general rule for referring to a section is
+# <datakeyword> <sectiontype> <sectionname>
+# <sectiontype> also determining the type of submodel used. If no name
+# is specified, the first SECTION of appropriate type is used.
+# Data lines (not referring to a submodel) are generally of the format
+# <datakeyword> <avg> <min> <max> <delta>
+# where min, max & delta are used only when in inverse mode, or
+# <datakeyword> <data1> <data2> ...
+# for string & some other values (see documentation/comments for details)
+# when a data file is requested, the file has to have at least 2 colums
+# first column has to contain sequentially ordered wavelength
+# the smallest and largest wavelengths encountered in an input file may limit the 
+# range used by frt -- wavelengths beyond this range are ignored
+
+SECTION frt
+  name test_birch          # optional
+
+  job_id -1                # i_job:
+    # -3 : produce RAMI output
+    # -2 : angular reflectance on a (thetha,phi) grid (1 wl)
+    # -1 : flux reflectance (spectrum or discrete wavelengths)
+    #  0 : single reflectance (one wavelength)
+    #  1 : reflectance spectrum (spectrum or discrete wavelengths)
+    #  2 : reflectance angular distribution (fixed azimuth, 1 wl)
+    #  3 : reflectance for several Sun angles (1 wl)
+    #  4,5 : inversion (1 wl)
+  age 5                   # optional, not used in computations
+
+  refr_idx file refrind.dat
+    # wax refrective index, either a single value or keyword
+    # 'file' followed by file name (as usual, 2-column format,
+    # (wavelength, idx)
+    # used in PROSPECT and Liberty
+
+  nlayers 4               
+  # no. of canopy layers (used to integrate numerically 1st order reflectance)
+
+  treeclass ellipsoid birch1
+  # in inverse mode, only 1st treeclass is optimized
+
+  groundmodel mcrm
+  # groundmodel lambert simple
+  # for "groundmodel lambert <name>", reflectance value can be
+  # specified instead of name, e.g., "groundmodel lambert 0.5"
+
+  skymodel difsky
+  # for "skymodel difsky <name>", S/Q ratio can be
+  # specified instead of name, e.g., "skymodel difsky 0.5"
+
+  # invmodel inversion    # inversion parameter set
+
+  angles geometry         # view & sun angles
+
+  wavelength spectrum  s1 # specifies which wavelengths to use.
+  # If job_id uses only one wavelength, the first in spectrum
+  # or a discrete block will be used. In the discrete case,
+  # a single value can also be used instead of section name,
+  # e.g. "wavelength discrete 550" or even "wavelength 550".
+
+  correction_wl -2
+  # The wavelength for computing the energy conservation correction of 
+  # higher-order scattering to match the source by 1st-order
+  # wavelength affects the used leaf R/T ratio
+  # 0: use correction for each wl separately
+  # negative: index in the wl array (-1: 1st wl, -2: 2nd, etc.)
+  # positive: absolute wavelength to be used (find closest match)
+  # to have no correction, use a very negative number,
+  #    i.e., index beyond wavelength array length
+
+  cubature GLcubature GL91
+  # cubature type: GLcubature (Gauss-Lagrange) works and can be
+  # specified in a separate SECTION, but you can specify the no.
+  # of knots over zenith and  azimuth as 'cubature 9 9' or
+  # 'cubature GLcubature 9 9'
+
+END SECTION
+
+SECTION ellipsoid birch1
+  species beach1
+  density 0.06            # stand density, m^-2
+  height 6.95             # tree height, m
+  crownlength 5.18        # crown length, m
+  crownradius 1.00        # crown radius, m
+  trunkdiameter 7.13      # trunk diameter, cm
+  dlw 0.9                 # dry leaf weight per tree, kg
+  slw 167                 # specific leaf weight, g m^-2
+  bailai .1               # BAI / LAI
+  tdp 1                   # tree distribution parameter
+  ssc 1                   # shoot shading coefficient
+  shl 0.1                 # shoot length
+  wax_cf 1                # wax refractive index correction factor. Setting to 0 will remove specular component
+  br_refl file birctr1.dat     # branch reflectance file
+  tr_refl file birctr1.dat     # trunk reflectance file
+  # a file can be specified for brank & trunk reflectance,
+  # like br_refl file filename
+  leafmodel prospect average   # leaf model & section
+  # for ellipsoid & cone, 'leafmodel fixed <lr> <lt>' can be used,
+  # <lr> is leaf reflectance and <lt> leaf trasnmittance; and
+  # 'leafmodel file <filename>', file <filename> has to contain
+  # in columns wavelength (increasing, 1nm steps), reflectance,
+  # transmittance.
+END SECTION
+
+SECTION cone example
+  density 0.06            # stand density, m^-2
+  height 6.95             # tree height, m
+  crownlength 3           # crown length, m
+  cyllength 2             # length of cyl. part, m
+  crownradius 1.00        # crown radius, m
+  trunkdiameter 7.13      # trunk diameter, cm
+  dlw 0.9                 # dry leaf weight per tree, kg
+  slw 167                 # specific leaf weight, g m^-2
+  bai/lai .1              # BAI / LAI
+  tdp 1                   # tree distribution parameter c_B
+    # in Eq. (10) of Nilson (1999)
+  ssc 1                   # shoot shading coefficient
+  nlayers 4               # no. of crown layers
+  shl 0.1                 # shoot length
+  wax_cf 1                # wax refractive index correction factor
+  br_refl file birctr1.dat     # branch reflectance
+  tr_refl file birctr1.dat     # trunk reflectance
+  # a file can be specified for brank & trunk reflectance,
+  # like br_refl file filename
+  leafmodel prospect average   # leaf model & section
+END SECTION
+
+SECTION prospect average
+  # average values from Jacquemoud et al. 1996
+  nslw 0.0147             # leaf str. param. - coefficient (N/SLW)
+    # actually, just parameter N divided by specific leaf weight
+  refr_ratio 1       # a correction factor for refractive index
+  # refr_ratio is used only for crown layer!
+  # now, components -- spectrum file and % of SLW
+  component chlorp3.dat 0.11
+  component waterp3.dat 198
+  component drymatter.dat 99.89
+END SECTION
+
+SECTION liberty example
+  # example section for LIBERTY
+  dcell                   # cell diameter
+  air                     # inter-cell air
+  refr_ratio 1       # a correction factor for refractive index
+  # now, components -- spectrum file and % of SLW
+  component chlorp3.dat 0.11
+  component waterp3.dat 198
+  component drymatter.dat 99.89
+END SECTION
+
+
+SECTION lambert simple
+  # section to specify Lambertian ground reflectance. Two options -- constant ground reflectance or input file
+  # just one of the possible parameters, 'reflectance' or 'file' has to be used
+  # reflectance 0         # constant reflectance for all wavelengths
+  file linear.csv         # file with (at least) two columns -- wavelength and reflectance
+END SECTION
+
+
+SECTION difsky par
+  # uniform sky, direct/global ratio
+  # should only be used for monochromatic calculations
+  SQ_ratio 0.6
+END SECTION
+
+SECTION discrete
+  # the wavelengths used in the model
+  # this a special section, no keywords, just list a single column
+  # of wavelengths
+  700
+  800
+END SECTION
+
+SECTION spectrum s1
+  # the wavelengths used in the model
+  start 400
+  step 5
+  number 10               # no. of wavelengths
+END SECTION
+
+SECTION geometry
+  # view and sun angles
+  # the fields used in this section depend on job id
+  # angles in degrees
+  # NOTE: only one sun angle is used, n_sunangles is not used anymore (2021)
+  sunzenith 45            # solar zenith angle
+  viewnadir 0             # view nadir angle
+  viewazimuth 90          # azimuth angle
+  viewincrement 5         # increment of view zenith angle
+END SECTION
+
+SECTION GLcubature GL91
+  # Gauss-Lagrange cubature over zenith & azimuth angle:
+  # G-L over zenith and uniform over azimuth. No. of knots:
+  theta 9
+  phi 1
+END SECTION
+
+# a newline or a comment line is required at the end of the file

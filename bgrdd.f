@@ -1,7 +1,7 @@
+!   part of the fortran-only version of FRT
       subroutine bgrdd
      & (thets, thetv, skyl, efflai, tlty,
      & rteff, tteff, rddgrou, rsdgrou, bddif)
-c
 c   diffuse fluxes down
 c                                  A. Kuusk  14.10.2000, 12.09.2002
 c   tlty - LAI of trunks

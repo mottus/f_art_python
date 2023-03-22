@@ -1,9 +1,8 @@
+!   part of the fortran-only version of FRT
       subroutine hetk8o
      & (ncl, thets, thetv, phi, stdns, uuu,
      & bdgfu, bdgfd, btr1uk, btr1dk, pkhair, rnlf, rtrnk, rrs, ttt,
      & bi0u, bi0d )
-     
-
 c  Single scattering of crowns as viewed from above and below
 c                           [ Eq. (3) of manual ver. 09.2002]
 c  võrade ühekordse hajumise heledus alt ja ülalt vaadates

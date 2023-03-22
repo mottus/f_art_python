@@ -1,8 +1,10 @@
-      subroutine comprt(XC, IC, SPCIN, XOUT, SPCOUT)      
+!    part of the frt distribution
+!  not used by python version of FRT, but can be used via frt_wrapper.py
+	  subroutine comprt(XC, IC, SPCIN, XOUT, SPCOUT)      
 !f2py intent(in) XC, IC, SPCIN
 !f2py intent(inout) XOUT, SPCOUT
 c  compile with sth like
-c      f2py -c  --compiler=mingw32 -I. -m comprt bck3.o bgrdd.o enel3.o hetk8o.o hetk8s.o layer.o optmean.o rmsub.o spooi.o strmean.o twostr.o comprt.f
+c      f2py -c  --compiler=mingw32 -m comprt bck3.o bgrdd.o enel3.o hetk8o.o hetk8s.o layer.o optmean.o rmsub.o spooi.o strmean.o twostr.o comprt.f
 c  --- old func.f ----
 c        XC -- forest and geometry parameter array, floating-point parameters
 c        IC -- forest parameter array, integer parameters
@@ -10,7 +12,6 @@ c        SPCIN -- forest element spectral properties, matrix of double precision
 c result: 
 c        XOUT: scalar floating-point outputs (spectrally invariant forest stand optical characteristics)
 c        SPCOUT: spectrum array outputs (spectral reflectance and transmittance factors)
-c  not used by python version of FRT, python bindings for testing only
 c
 c               A. Kuusk  24.10.1995 Avignonis 
 c                   + modifications later
@@ -490,7 +491,7 @@ c           if no flux computations, hetk8sB is called from within wavelength lo
         if ( l_dirs .or. l_struc ) then
 c          calculate gaps_s
           call hetk8sA
-     &     (lelli, ncl, shl, nzs, 1, thets, 
+     &     (lelli, ncl, shl, nzs, 1, [thets], 
      &      stdns, htr, hc1, hc2, rcr, dbh, glmp, ulg, uuu, gaps_s) 
         endif
 c  
@@ -587,13 +588,13 @@ c               load gaps_v and bidirectional variables
               else
 c             compute bidirectional gap probabilities
                 call hetk8sB
-     &          (lelli, ncl, shl, nzs, 1, thetv, thets, phiv,
+     &          (lelli, ncl, shl, nzs, 1, [thetv], thets, phiv,
      &          stdns, htr, hc1, hc2, rcr, dbh, glmp, ulg, uuu,
      &          psgvu, bdgfu, bdgfd, btr1uk, btr1dk )
                 if ( l_dirv ) then
 c                 calculate gaps_v
                   call hetk8sA
-     &            (lelli, ncl, shl, nzs, 1, thetv, stdns, htr,
+     &            (lelli, ncl, shl, nzs, 1, [thetv], stdns, htr,
      &             hc1, hc2, rcr, dbh, glmp, ulg, uuu, gaps_v)
                 endif
               endif

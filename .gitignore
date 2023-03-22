@@ -1,4 +1,5 @@
 *.pyd
+__pycache__
 
 # Prerequisites
 *.d

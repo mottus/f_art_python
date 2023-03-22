@@ -1,4 +1,4 @@
-c
+!    part of the frt distribution
 c   mathematical helping functions for the frt model
 c     no header files included in the subroutines
 c

@@ -1,7 +1,7 @@
-c  this file contains spooi & friends: pi11d, pi11u, pi22d, pi22u
+!   part of the FRT distribution
+c   this file contains spooi & friends: pi11d, pi11u, pi22d, pi22u
 c     depends on rmsub.f for scone, stem
-c  part of frt python distribution
-c  compile: f2py.exe -c --compiler=mingw32 -m spooi rmsub.o spooi.f
+c   compile: f2py.exe -c --compiler=mingw32 -m spooi rmsub.o spooi.f
 
       subroutine spooi
      & (lelli, ncl, ulg, shl, stdns, htr, hc1, hc2, rcr, dbh,

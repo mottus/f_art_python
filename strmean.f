@@ -1,9 +1,10 @@
+!   part of the fortran-only version of FRT
+! NOTE: not used by the python version of frt, f2py definitions provided for testing
       subroutine strmean
      & (lelli, ncl, stdns, htr, hc1, hc2, rcr, dbh,
      & rmass, slwcl, rlai, rbai, clmpst, clmpsh, glmp, ulg, uuu,
      & efflai, sntr, hmtree, vhekm, vhcilm, rmcrown, dbhmean, rmassm,
      & slwm, vliit, cano, tlty, tlaief, tlai, tbai)
-! NOTE: not used by the python version of frt, f2py definitions provided for testing
 !f2py intent(in) lelli, ncl, stdns, htr, hc1, hc2, rcr, dbh, rmass, slwcl, rlai, rbai, clmpst, clmpsh, glmp
 !f2py intent(out) ulg, uuu, efflai, sntr, hmtree, vhekm, vhcilm, rmcrown, dbhmean, rmassm, slwm, vliit, cano, tlty, tlaief, tlai, tbai
 c  depends on pi11u, pi22u -- available in spooi.f, which depends on rmsub.o
