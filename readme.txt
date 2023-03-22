@@ -1,4 +1,4 @@
-readme.txt version: 2022/11/17
+readme.txt version: 2023/03/22
 
 This folder contains the modified FRT (Forest Reflectance and Transmittance) code.
 The following modifications have been made compared with the original version:
@@ -26,10 +26,14 @@ probability of encountering a bug is larger in python.
 
 To run anything but the pure python version, a fortran compiler (preferably gfortran)
 is needed and the fortran version of FRT needs to be compiled with all the relevant 
-object files (using the command 'make frt'). The relevant modules to be imported to python via f2py need also be 
-compiled -- see the python code for the imported modules and the fortran program files
-for compiling instructions. It's relatively staightforward and has been tested on 
-Windows. Compiling on Linux should be even easier.
+object files (using the command 'make frt'). The relevant modules to be imported to 
+python via f2py need also be compiled -- see the python code for the imported modules
+and the fortran program files for compiling instructions. The hints there are given for
+Windows. Under Windows, FRT has been compiled with gfortran installed using anaconda
+(conda install -c conda-forge m2w64-gcc-fortran and conda install -c conda-forge make).
+Various problems may arise when setting up an independent fortran compiler, e.g., 
+modules involving input and output not loding in python etc. Compiling on Linux
+should be easier.
 
 Most of the documentation is provided in code. To start using the python code, open 
 frtclass.py (the main code) and frtconf.py (configuraton data). The python version 

@@ -11,22 +11,31 @@ import sys
 from scipy.optimize import brentq
 from copy import deepcopy
 import json
-# f2py.exe -c --compiler=mingw32 -m rd_cfm rd_cfm.f
 
 from frtfunctions import *
 from frtfunctions_py import *
 # to use the fortran77 bindings and libraries, use this instead of the above
 # from frtfunctions_f77 import *
+# NOTE! to use fortran modules, run first "make frt" in the source code directory
+# NEXT, the following modules need to be compiled with f2py (see their individual .f files for details)
+#   spooi, enel3, bck3
+
+# to use f-art input files, run also this (or similar, depending on system config)
+#  in the frt source code folder:
+# f2py.exe -c --compiler=mingw32 -m rd_cfm rd_cfm.f
+
 
 class frt_model:
 
-    def __init__( self, frt_srcdir ):
+    def __init__( self, frt_srcdir=None ):
+        # frt_srcdir is needed to import the fortran modules
         self.frtconf = {}
         self.frtconf_isread = False
         self.configuration_applied = False
         self.frt_configured = False
-        sys.path.append(frt_srcdir)
-        self.frt_srcdir = frt_srcdir
+        self.frt_srcdir = frt_srcdir # frt_srcdir is None: python-only FRT.
+        if frt_srcdir is not None:
+            sys.path.append(frt_srcdir)
         self.frt_dir = "."
         # the required key lists below are not complete and do not guarantee a minimum set
         self.NeededConfKeys = ['TreeClasses', 'thetv', 'phiv', 'thets', 'wl']
@@ -1017,28 +1026,4 @@ class frt_model:
             self.MeanReflF[i] = rteff_i
             self.MeanTransF[i] = tteff_i
 
-
-if __name__ == '__main__':
-    frt_srcdir = os.path.dirname(__file__) # the place where the compiled f77 modules are, ssuming in the same folder as this script
-    sys.path.append( frt_srcdir )
-
-    configfilename = "infile_test.txt"
-    frt_dir = os.path.join( os.path.dirname(__file__), "data" ) # the place where the data files are
-
-    # reading a configuration file, requires fortran and compiled frt
-    # F =frt_model( frt_srcdir  )
-    # F.read_conf( os.path.join(frt_dir,configfilename) )
-    # print("computing reflectance for F...", end="")
-    # F.reflectance()
-    # print(" done. see F.R and F.T")
-
-
-    G = frt_model( frt_srcdir )
-    # load the frtconf dict
-    exec( open( os.path.join(frt_srcdir,"frtconf.py") ).read() )
-    G.load_conf( frtconf , frt_dir )
-    # G.configure_frt() # this is not needed as configure_frt called automatically by reflectance()
-    print("computing reflectance for G...", end="")
-    G.reflectance() # compute reflectance of the forest described in F
-    print(" done. see G.R and G.T")
 

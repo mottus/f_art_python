@@ -1,5 +1,15 @@
 # Makefile to make frt.   A. Kuusk. 29.04.2005
 #                         M. Mõttus 22.10.2020
+# create system-agnostic RM https://stackoverflow.com/questions/4058840/makefile-that-distinguishes-between-windows-and-unix-like-systems
+ifdef OS
+   RM = del /Q
+   FixPath = $(subst /,\,$1)
+else
+   ifeq ($(shell uname), Linux)
+      RM = rm -f
+      FixPath = $1
+   endif
+endif
 
 SHELL  = /bin/sh
 
@@ -42,7 +52,7 @@ frt: $(OBJ) $(OBJ1) $(INCL)
 #	chmod g+rx frt
 
 clean:
-	rm -f *.o core
+	$(RM) *.o core *.pyd
 
 distclean:
-	rm -f *.o frt core
+	$(RM) *.o frt frt.exe core *.pyd

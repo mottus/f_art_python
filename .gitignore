@@ -1,5 +1,6 @@
 *.pyd
 __pycache__
+*_temp
 
 # Prerequisites
 *.d

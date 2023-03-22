@@ -1,7 +1,12 @@
 # FRT run from python: this program calls consecutively rd_cft, corrfact and comprt
 # the latter is the module where frt computations take place
 #  i.e., almost as good as calling frt from the command line, but with data available in python
-# https://www.numfys.net/howto/F2PY/
+# WARNING! USE AT YOUR OWN RISK! This is the least supported way to use FRT
+# more preferred approaches
+#  1) use the python-only version in frtclass.py
+#  2) use the python version in frtclass.py, but modify it to import fortran modules via frtfunctions_f77
+#  3) use the fortran-only FRT (via make frt)
+# relies heavily on F2PY, https://www.numfys.net/howto/F2PY/
 #  numpy can be called as, e.g.,
 # f2py.exe -c --compiler=mingw32 -m rd_cfm rd_cfm.f
 # I compiled the comprt module as
@@ -9,7 +14,7 @@
 # more examples are at the top of individual .f files
 # f2py can be called from python:
 # numpy.f2py.compile(source, modulename='untitled', extra_args='', verbose=True, source_fn=None, extension='.f')
-# Matti Mõttus 2022, based on earlier examples by Andres Kuusk
+# Matti Mõttus 2022, 2023; based on fortran code by Andres Kuusk
 
 import numpy as np
 import os

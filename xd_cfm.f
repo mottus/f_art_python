@@ -1,5 +1,5 @@
-!     part of the frt distribution
-!     functions to read the new input file format
+!     part of the frt distribution, only used by python 
+!     function to read the new input file format from python
 !     depends on rd_cfm.f
       subroutine xd_cfm( fname, XC, IC, SPCIN, DESC, lerr )
 !F2PY INTENT(IN) :: fname
@@ -59,11 +59,11 @@ c     initialize outputs to zero
       ire = 12
       wl_set = .false.
       write(*,*)"xd_cfm opening file ", trim(fname)
-      open (ire, file = fname, status = 'old', err = 99)
+      open (ire, file = fname, status = 'old')
       call rd_cfm(ire, XC, IC, SPCIN, DESC, lerr)
       close(ire)
       write(*,*)"xd_cfm finished reading configuration file."
-      return 
-99    write (*, '(a)')  'File not found: ', trim(fname)
-      return 
+      return
+	  ire = 13
+	  write(*,*) "jjj"
       end  ! subroutine xd_cfm( )
