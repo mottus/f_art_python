@@ -4,16 +4,16 @@
 ifdef OS
    RM = del /Q
    FixPath = $(subst /,\,$1)
+   F2PY =  f2py.exe -c --compiler=mingw32
 else
    ifeq ($(shell uname), Linux)
       RM = rm -f
       FixPath = $1
+	  F2PY =  f2py -c 
    endif
 endif
 
-SHELL  = /bin/sh
-
-GG     = gfortran
+GG = gfortran
 # GG     = g77
 
 # GFLAGS = -c -O0 -Wunused -Wuninitialized -I.
@@ -21,7 +21,7 @@ GG     = gfortran
 # GFLAGS = -c -O2 -Wunused -Wuninitialized -I.
 # oli enne: GFLAGS = -g -c  -I.
 GFLAGS = -g -c -Wunused -Wuninitialized  -fPIC -I.
-# -fPIC on vajalik pythoniga linkimiseks
+# -fPIC may be required for linking with python
 LFLAGS = -o
 # LFLAGS = -static -o
 # GFLAGS = -c -g -O0 -Wunused -I.
@@ -35,21 +35,36 @@ OBJ   = bck3.o bgrdd.o corrfact.o \
  layer.o optmean.o rmsub.o \
  spooi.o strmean.o \
  rd_cfm.o twostr.o 
- 
-INCL1 = frtpar.h
 
-frt.o: frt.f $(INCL1)
+INCL = frtpar.h
+INCL2 = cf_new.h
+
+frt.o: frt.f $(INCL)
 	$(GG) $(GFLAGS) $<
 
-%.o: %.f $(INCL) $(INCL1)
+%.o: %.f $(INCL)
 	$(GG) $(GFLAGS) $<
 
-frt: $(OBJ) $(OBJ1) $(INCL) 
+frt: $(OBJ) $(OBJ1) $(INCL) $(INCL2)
 	$(GG) $(LFLAGS) $@ $(OBJ1) $(OBJ)
 
 #frt: $(OBJ) $(OBJ1) $(INCL)
 #	$(GG) $(LFLAGS) $@ $(OBJ1) $(OBJ); \
 #	chmod g+rx frt
+
+xd_cfm.pyd: rd_cfm.o
+	$(F2PY) -m xd_cfm rd_cfm.o xd_cfm.f
+
+spooi.pyd: rmsub.o
+	$(F2PY) -m spooi rmsub.o spooi.f
+	
+enel3.pyd: spooi.o bck3.o rmsub.o 
+	$(F2PY) -m enel3 spooi.o bck3.o rmsub.o enel3.f
+	
+bck3.pyd: spooi.o
+	$(F2PY)  -m bck3 rmsub.o spooi.o bck3.f
+	
+pythonlibs: xd_cfm.pyd spooi.pyd enel3.pyd bck3.pyd
 
 clean:
 	$(RM) *.o core *.pyd

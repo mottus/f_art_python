@@ -19,17 +19,20 @@ frt_dir = os.path.join( current_dir, "data" ) # the place where the FRT data fil
 # First, a model needs to be generated
 G = frt_model( None )
 
-# frt_srcdir is needed if compiled fortran modules are used
-# frt_srcdir = current_dir # the place where the compiled f77 modules are, assuming in the same folder as this script
-# H = frt_model( frt_srcdir )
-# H.read_conf( os.path.join( current_dir, "in_new_demo" ) )
-
+# OPTION A
 # Load the frtconf dict containing model configuration
-# We assume that it is in the same folder as this file
+# Here,it's defined in a python script in the same folder as this file
 exec( open( os.path.join(current_dir,"frtconf.py") ).read() )
-
 G.load_conf( frtconf , frt_dir )
-# G.configure_frt() # this is not needed as configure_frt called automatically by reflectance()
+G.configure_frt() # this is not needed as configure_frt called automatically by reflectance()
 print("computing reflectance for G...", end="")
 G.reflectance() # compute reflectance of the forest described in F
 print(" done. see G.R and G.T")
+
+# OPTION B: use Fortran77 FRT input file (text file)
+# this f77 mode
+# frt_srcdir is needed if compiled fortran modules are used
+# frt_srcdir = current_dir # the place where the compiled f77 modules are, assuming in the same folder as this script
+# H = frt_model( frt_srcdir )
+# H.read_conf( os.path.join( current_dir, "in_frt_demo" ), frt_dir )
+# H.reflectance()

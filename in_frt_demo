@@ -56,9 +56,9 @@ SECTION frt
   # no. of canopy layers (used to integrate numerically 1st order reflectance)
 
   treeclass ellipsoid birch1
-  # in inverse mode, only 1st treeclass is optimized
+  treeclass ellipsoid birch1
 
-  groundmodel mcrm
+  groundmodel lambert 0.2
   # groundmodel lambert simple
   # for "groundmodel lambert <name>", reflectance value can be
   # specified instead of name, e.g., "groundmodel lambert 0.5"
@@ -96,7 +96,7 @@ SECTION frt
 END SECTION
 
 SECTION ellipsoid birch1
-  species beach1
+  species birch1
   density 0.06            # stand density, m^-2
   height 6.95             # tree height, m
   crownlength 5.18        # crown length, m
@@ -109,19 +109,21 @@ SECTION ellipsoid birch1
   ssc 1                   # shoot shading coefficient
   shl 0.1                 # shoot length
   wax_cf 1                # wax refractive index correction factor. Setting to 0 will remove specular component
-  br_refl file birctr1.dat     # branch reflectance file
-  tr_refl file birctr1.dat     # trunk reflectance file
-  # a file can be specified for brank & trunk reflectance,
-  # like br_refl file filename
-  leafmodel prospect average   # leaf model & section
+  br_refl file branchspectrum_birch.txt     # branch reflectance file
+  tr_refl file branchspectrum_birch.txt     # trunk reflectance file
+  # a single number can be given for reflectance after the keyword fixed: 'br_refl fixed 0.24'
+  # or file can be specified, e.g. 'br_refl file <filename>', 
+  # <filename> has to contain 2 columns: wavelength (increasing, in nm), reflectance.
+  
+  leafmodel file leafspectrum_birch.txt  # leaf model & section
   # for ellipsoid & cone, 'leafmodel fixed <lr> <lt>' can be used,
-  # <lr> is leaf reflectance and <lt> leaf trasnmittance; and
+  # <lr> is leaf reflectance and <lt> leaf trasnmittance; or
   # 'leafmodel file <filename>', file <filename> has to contain
-  # in columns wavelength (increasing, 1nm steps), reflectance,
-  # transmittance.
+  # in columns wavelength (increasing, in nm), reflectance, transmittance.
 END SECTION
 
 SECTION cone example
+  species spruce
   density 0.06            # stand density, m^-2
   height 6.95             # tree height, m
   crownlength 3           # crown length, m
@@ -137,34 +139,9 @@ SECTION cone example
   nlayers 4               # no. of crown layers
   shl 0.1                 # shoot length
   wax_cf 1                # wax refractive index correction factor
-  br_refl file birctr1.dat     # branch reflectance
-  tr_refl file birctr1.dat     # trunk reflectance
-  # a file can be specified for brank & trunk reflectance,
-  # like br_refl file filename
-  leafmodel prospect average   # leaf model & section
-END SECTION
-
-SECTION prospect average
-  # average values from Jacquemoud et al. 1996
-  nslw 0.0147             # leaf str. param. - coefficient (N/SLW)
-    # actually, just parameter N divided by specific leaf weight
-  refr_ratio 1       # a correction factor for refractive index
-  # refr_ratio is used only for crown layer!
-  # now, components -- spectrum file and % of SLW
-  component chlorp3.dat 0.11
-  component waterp3.dat 198
-  component drymatter.dat 99.89
-END SECTION
-
-SECTION liberty example
-  # example section for LIBERTY
-  dcell                   # cell diameter
-  air                     # inter-cell air
-  refr_ratio 1       # a correction factor for refractive index
-  # now, components -- spectrum file and % of SLW
-  component chlorp3.dat 0.11
-  component waterp3.dat 198
-  component drymatter.dat 99.89
+  br_refl file branchspectrum_spruce.txt     
+  tr_refl file branchspectrum_spruce.txt     
+  leafmodel file leafspectrum_spruce.txt
 END SECTION
 
 
@@ -172,9 +149,9 @@ SECTION lambert simple
   # section to specify Lambertian ground reflectance. Two options -- constant ground reflectance or input file
   # just one of the possible parameters, 'reflectance' or 'file' has to be used
   # reflectance 0         # constant reflectance for all wavelengths
-  file linear.csv         # file with (at least) two columns -- wavelength and reflectance
+  # file linear.csv         # file with (at least) two columns -- wavelength and reflectance
+  file undersory_fertility3.txt
 END SECTION
-
 
 SECTION difsky par
   # uniform sky, direct/global ratio

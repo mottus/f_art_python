@@ -22,7 +22,7 @@ from frtfunctions_py import *
 
 # to use f-art input files, run also this (or similar, depending on system config)
 #  in the frt source code folder:
-# f2py.exe -c --compiler=mingw32 -m rd_cfm rd_cfm.f
+# f2py.exe -c --compiler=mingw32 -m xd_cfm xd_cfm.f
 
 
 class frt_model:
@@ -43,11 +43,12 @@ class frt_model:
             'CrownRadius', 'DBH', 'DryLeafWeight', 'SLW', 'BAILAI', 'TreeClumping', 'ShootClumping',
             'ShootLength' ]
 
-    def load_conf( self, frtconf, frt_dir="." ):
+    def load_conf( self, frtconf, frt_dir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
         optionally, path to data files may be given
         """
-        self.frt_dir = frt_dir
+        if frt_dir is not None:
+            self.frt_dir = frt_dir
         for key in self.NeededConfKeys:
             if key not in frtconf.keys():
                 print("frt_model.load_conf(): Required key "+key+" missing in frtconf. Aborting")
@@ -121,15 +122,18 @@ class frt_model:
         self.configuration_applied = False # the data from the dict needs to be copied into class variables
         self.frt_configured = False # new configutration read, indicate that preparatory computations are not done
 
-    def read_conf( self, configfilename):
+    def read_conf( self, configfilename, frt_dir=None ):
         # read a FRT configuration file into the frtconf dictionary
         #  currently, there is no python way to read the input file, only via the fortran module
-        import rd_cfm
+        if frt_dir is not None:
+            self.frt_dir = frt_dir
+        # import python library
+        import xd_cfm
         # import also the helpers to convert data from fortran
         from frt_wrapper_functions import chararray2strarray
-        # rd_cfm needs to be run in the  folder where the data are
-        os.chdir(frt_dir)
-        q=rd_cfm.xd_cfm( configfilename )
+        # xd_cfm needs to be run in the  folder where the data are
+        os.chdir(self.frt_dir)
+        q=xd_cfm.xd_cfm( configfilename )
         # subroutine xd_cfm( fname, XC, IC, SPCIN, DESC, lerr)
         # q: ( XC, IC, SPCIN, DESC, lerr)
         XC = q[0]
@@ -142,10 +146,11 @@ class frt_model:
             #error has occurred and error message has been  displayed.
             return
 
-        # convert  DESC into readable form
-        DESC = chararray2strarray(DESC)
+        # convert  DESC into readable form. NOTE: this may depend on the specific implementation of f2py
+        # DESC = chararray2strarray(DESC) # OBSOLETE?
+        DESC = [ x.decode('utf8').strip() for x in DESC ] # decode and strip to get an array of proper strings
         self.frtconf["Description"] = DESC[0]
-        nclmax = rd_cfm.frtpar.fnclmax[()] # extract from zero-dimensional ndarray
+        nclmax = xd_cfm.frtpar.fnclmax[()] # extract from zero-dimensional ndarray
 
         # Move configuration data to the frtconf dictionary, start with integers
         #   IC elements === NOTE: BELOW ARE THE FORTRAN NUMBERS STARTING FROM 1. Subtract 1 for python

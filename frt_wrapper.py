@@ -8,7 +8,7 @@
 #  3) use the fortran-only FRT (via make frt)
 # relies heavily on F2PY, https://www.numfys.net/howto/F2PY/
 #  numpy can be called as, e.g.,
-# f2py.exe -c --compiler=mingw32 -m rd_cfm rd_cfm.f
+# f2py.exe -c --compiler=mingw32 -m xd_cfm xd_cfm.f
 # I compiled the comprt module as
 # f2py.exe -c --compiler=mingw32 -m comprt bck3.f bgrdd.o diffor.o enel3.o hetk8o.o hetk8s.o layer.o optmean.o pi11d.o pi11u.o pi22d.o pi22u.o rmsub.o spooi.o stem.o strmean.o twostr.o comprt.f
 # more examples are at the top of individual .f files
@@ -38,10 +38,10 @@ if not frt_srcdir in sys.path:
 os.chdir(frt_dir) # frt needs to be run from its data folder
 
 # import the fortran version of the frt model
-#  three separate subroutines are called by the main function: rd_cfm, corrfact, and comprt
+#  three separate subroutines are called by the main function: xd_cfm, corrfact, and comprt
 #    these are compiled and available as separate modules, although corrfact includes a full comprt
 from frt_wrapper_functions import *
-import rd_cfm
+import xd_cfm
 import corrfact
 corrfact.pidr.pi = np.pi # pi and pidr are actually filled also in fortran code
 corrfact.pidr.dr = np.pi/180
@@ -49,7 +49,7 @@ corrfact.volint.l_volint = 0 # to indicate that integration weights need to be c
 import comprt
 comprt.volint.l_volint = 0 # to indicate that integration weights need to be computed
 
-InputData=rd_cfm.xd_cfm( configfilename )
+InputData=xd_cfm.xd_cfm( configfilename )
 # subroutine xd_cfm( fname, XC, IC, SPCIN, DESC, lerr)
 # InputData: ( XC, IC, SPCIN, DESC, lerr)
 XC = InputData[0]
@@ -62,8 +62,8 @@ DESC_2 = DESC.reshape(-1,77).view('S77')
 DESC_3 = [ x[0].decode('utf8').strip() for x in DESC_2 ]
 
 # example of reading /frtpar/ elements
-nclmax = rd_cfm.frtpar.fnclmax[()] # zero-dimensional ndarray
-nspchnl = rd_cfm.frtpar.fnspchnl[()]
+nclmax = xd_cfm.frtpar.fnclmax[()] # zero-dimensional ndarray
+nspchnl = xd_cfm.frtpar.fnspchnl[()]
 # other variables fnclmax, fncub, fnspchnl, fnknotm, fnphim
 
 ijob = IC[11+nclmax]

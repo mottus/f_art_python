@@ -1,14 +1,14 @@
-readme.txt version: 2023/03/22
+readme.txt version: 2023/03/23
 
 This folder contains the modified FRT (Forest Reflectance and Transmittance) code.
 The following modifications have been made compared with the original version:
 
-* Different submodels (6S, PROSPECT, LIBERTY, ACRMf) have been removed. Instead, FRT
+* Different submodels (6S, PROSPECT, LIBERTY, ACRM) have been removed. Instead, FRT
   depends on externally provided (measured or modeled) spectra for forest floor,
   leaf reflectance and transmittance, and sky irradiance. 
 * The input file format for the fortran version has been modified to allow 
   specification of the various spectra.
-* A normalization has been applied to balance te first-order and higher-order
+* An optional normalization has been applied to balance te first-order and higher-order
   scattering. See Mõttus, M., Stenberg, P. & Rautiainen, M. (2007), JGR – Atmospheres,
   doi:10.1029/2006JD007445 for details.
 * The option to compute albedo, or flux reflectance, has been added: hence the name
@@ -25,17 +25,17 @@ substituting the two-stream submodel in FRT with a more flexible one. Alas, also
 probability of encountering a bug is larger in python.
 
 To run anything but the pure python version, a fortran compiler (preferably gfortran)
-is needed and the fortran version of FRT needs to be compiled with all the relevant 
-object files (using the command 'make frt'). The relevant modules to be imported to 
+is needed and the relevant libaries in the fortran version of FRT need to be compiled
+(e.g., using the command 'make frt'). The relevant modules to be imported to 
 python via f2py need also be compiled -- see the python code for the imported modules
-and the fortran program files for compiling instructions. The hints there are given for
-Windows. Under Windows, FRT has been compiled with gfortran installed using anaconda
-(conda install -c conda-forge m2w64-gcc-fortran and conda install -c conda-forge make).
-Various problems may arise when setting up an independent fortran compiler, e.g., 
-modules involving input and output not loding in python etc. Compiling on Linux
-should be easier.
+and the fortran program files for compiling instructions. Hopefully, this can be 
+achieved with the command 'make pythonlibs'). Under Windows, FRT has been compiled 
+with gfortran installed using anaconda (conda install -c conda-forge m2w64-gcc-fortran
+and conda install -c conda-forge make). Various problems may arise when setting up an
+independent fortran compiler, e.g., modules involving input and output not loading in
+python, etc. Compiling on Linux should be easier.
 
-Most of the documentation is provided in code. To start using the python code, open 
+Most of the documentation is provided in the code. To start using the python code, open 
 frtclass.py (the main code) and frtconf.py (configuraton data). The python version 
 of FRT does not read any configuration files: it's configured using a dictionary
 described in frtconf.py, which can be loaded and saved with the tools available in

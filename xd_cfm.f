@@ -4,7 +4,7 @@
       subroutine xd_cfm( fname, XC, IC, SPCIN, DESC, lerr )
 !F2PY INTENT(IN) :: fname
 !F2PY INTENT(OUT) :: XC, IC, SPCIN, DESC, lerr
-compile: f2py.exe -c --compiler=mingw32 -m xd_cfm rd.cfm.o xd_cfm.f
+compile: f2py.exe -c --compiler=mingw32 -m xd_cfm rd_cfm.o xd_cfm.f
 c     A wrapper for rd_cfm for opening the input file
 c     The file is usually opened in frt.f; this function
 c     allows to call rd_cfm from python

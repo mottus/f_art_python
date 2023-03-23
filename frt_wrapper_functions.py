@@ -56,6 +56,8 @@ def chararray2strarray( S ):
     More explicitly: if a fortran function returns a "character*N S(M)", f2py retreives
     it as an M-element array of N-element array of characters. This function converts it to an
     M-element array of strings.
+    NOTE: apparently, this is not the case anymore, f2py returns numpy.ndarray of length M
+          of 'numpy.bytes_'. hence the reshaping is not necessary and this function is OBSOLETE
     """
     M = len(S[0])
     S_2 = S.reshape(-1,M).view( 'S'+str(M) )
