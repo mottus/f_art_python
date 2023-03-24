@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # the FRT class: forest reflectance and transmittance. Before executing, check the paths at the end of the file,
-#  especially frt_dir. Executing this code creates the object G of type frt_model, configures it,
+#  especially frt_datadir. Executing this code creates the object G of type frt_model, configures it,
 #  and computes it's reflectance and transmittance. The results are in G.R and G.T with more details
 #  -- such as scattering by different orders -- in other variables of G.
 #  to compute flux reflectance, run G.flux_reflectance(). See the relevant functions for their outputs.
@@ -35,20 +35,21 @@ class frt_model:
         self.frt_configured = False
         self.frt_srcdir = frt_srcdir # frt_srcdir is None: python-only FRT.
         if frt_srcdir is not None:
-            sys.path.append(frt_srcdir)
-        self.frt_dir = "."
+            if frt_srcdir not in sys.path:
+                sys.path.append(frt_srcdir)
+        self.frt_datadir = "."
         # the required key lists below are not complete and do not guarantee a minimum set
         self.NeededConfKeys = ['TreeClasses', 'thetv', 'phiv', 'thets', 'wl']
         self.NeededClassKeys = ['l_elli', 'StandDensity', 'TreeHeight', 'CrownLength1',
             'CrownRadius', 'DBH', 'DryLeafWeight', 'SLW', 'BAILAI', 'TreeClumping', 'ShootClumping',
             'ShootLength' ]
 
-    def load_conf( self, frtconf, frt_dir=None ):
+    def load_conf( self, frtconf, frt_datadir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
         optionally, path to data files may be given
         """
-        if frt_dir is not None:
-            self.frt_dir = frt_dir
+        if frt_datadir is not None:
+            self.frt_datadir = frt_datadir
         for key in self.NeededConfKeys:
             if key not in frtconf.keys():
                 print("frt_model.load_conf(): Required key "+key+" missing in frtconf. Aborting")
@@ -61,7 +62,7 @@ class frt_model:
                     return
         # check existence of spectral data
         self.frtconf = deepcopy(frtconf) # just in case :), we will modify frtconf while loading
-        wl = self.frtconf["wl"]
+        wl = self.frtconf['wl']
         SpectralKeys = [ 'rDDground', 'rDSground', 'rSDground', 'rSSground', 'WaxRefrInd', 'SQratio']
         for key in SpectralKeys:
             if key not in self.frtconf.keys(): # check for data file name
@@ -70,7 +71,7 @@ class frt_model:
                         +"File not found in frtconf. Aborting." )
                     return
                 else: # read data from file and interpolate
-                    fname = os.path.join( frt_dir,self.frtconf[ key+'File' ] )
+                    fname = os.path.join( frt_datadir,self.frtconf[ key+'File' ] )
                     print("reading "+fname)
                     Q = np.genfromtxt( fname )
                     wl_Q = Q[:,0]
@@ -88,19 +89,19 @@ class frt_model:
                             +"File for TreeClass " +int(i)+" not found in frtconf. Aborting." )
                         return
                     else: # read data from file and interpolate
-                        fname = os.path.join( frt_dir,tc[ key+'File' ] )
+                        fname = os.path.join( frt_datadir,tc[ key+'File' ] )
                         print("reading "+fname)
                         Q = np.genfromtxt( fname )
                         wl_Q = Q[:,0]
                         v_Q = Q[:,1]
                         tc[key] = np.interp( wl, wl_Q, v_Q )
-                        if key=="LeafRefl":
+                        if key=='LeafRefl':
                             # Check if Q has more than two columns
                             if Q.shape[1] > 2:
                                 # leaf transmittance in column 3
                                 v_Q = Q[:,2]
                                 tc["LeafTrans"] = np.interp( wl, wl_Q, v_Q )
-                                SpectralKeys.remove("LeafTrans")
+                                SpectralKeys.remove('LeafTrans')
                                 if Q.shape[1] > 3:
                                     # abaxial reflectance in column 4
                                     v_Q = Q[:,3]
@@ -110,29 +111,57 @@ class frt_model:
                         #
                     #
                 #
-            # finally, the fully optinal key
-            if "LeafRefl2File" in tc.keys():
-                fname = os.path.join( frt_dir,tc["LeafRefl2File"] )
+            # Finally, the fully optional (and not documented?) leaf abaxial reflectance as a separate file
+            if 'LeafRefl2File' in tc.keys():
+                fname = os.path.join( frt_datadir,tc['LeafRefl2File'] )
                 print("reading "+fname)
                 Q = np.genfromtxt( fname )
                 wl_Q = Q[:,0]
                 v_Q = Q[:,1]
-                tc["LeafRefl2"] = np.interp( wl, wl_Q, v_Q )
+                tc['LeafRefl2'] = np.interp( wl, wl_Q, v_Q )
+            if 'ScaleNeedle' in tc.keys():
+                if tc['ScaleNeedle']:
+                    # we need to scale the reflectance from needle -> shoot
+                    #  using basic p-theory, p computed from ShootClumping
+                    p = 1 - tc['ShootClumping']
+                    # calculate leaf albedo
+                    if 'LeafRefl2' in tc.keys():
+                        R = np.array( tc['LeafRefl'] + tc['LeafRefl2'] )/2
+                    else:
+                        R = np.array( tc['LeafRefl'] )
+                    w = R + np.array( tc['LeafTrans'] )
+                    # preserve R/T ratio. Currently, no better option.
+                    tc['LeafRefl'] = np.array( tc['LeafRefl'] )*(1-p)/(1-p*w)
+                    tc['LeafTrans'] = np.array( tc['LeafTrans'] )*(1-p)/(1-p*w)
+                    if 'LeafRefl2' in tc.keys():
+                        tc['LeafRefl2'] = np.array( tc['LeafRefl2'] )*(1-p)/(1-p*w)
+                    print("Scaled leaf R & T using p=", str(p)," for tree class ",
+                        str(i), end=" ")
+                    if 'Description' in tc.keys():
+                        print( tc['Description'] )
+                    else:
+                        print("")
+                    #
+                #
+            #
+        #
+
         self.frtconf_isread = True
         self.configuration_applied = False # the data from the dict needs to be copied into class variables
         self.frt_configured = False # new configutration read, indicate that preparatory computations are not done
 
-    def read_conf( self, configfilename, frt_dir=None ):
+    def read_conf( self, configfilename, frt_datadir=None ):
         # read a FRT configuration file into the frtconf dictionary
         #  currently, there is no python way to read the input file, only via the fortran module
-        if frt_dir is not None:
-            self.frt_dir = frt_dir
+        if frt_datadir is not None:
+            self.frt_datadir = frt_datadir
         # import python library
         import xd_cfm
         # import also the helpers to convert data from fortran
         from frt_wrapper_functions import chararray2strarray
         # xd_cfm needs to be run in the  folder where the data are
-        os.chdir(self.frt_dir)
+        os.chdir(self.frt_datadir)
+
         q=xd_cfm.xd_cfm( configfilename )
         # subroutine xd_cfm( fname, XC, IC, SPCIN, DESC, lerr)
         # q: ( XC, IC, SPCIN, DESC, lerr)
@@ -142,8 +171,10 @@ class frt_model:
         DESC = q[3]
         lerr = q[4]
 
-        if q[4] == 0:
+        if q[4] != 0:
             #error has occurred and error message has been  displayed.
+            print("WARNING! xd_cfm detected an error in the file, read_conf() ABORTING.")
+            print("xd_cfm  error flag ", lerr)
             return
 
         # convert  DESC into readable form. NOTE: this may depend on the specific implementation of f2py
@@ -307,7 +338,7 @@ class frt_model:
                 if isinstance( tc[i], np.intc ):
                     tc[i] = int( tc[i] )
         if filename is not None:
-            fn = os.path.join( self.frt_dir, filename)
+            fn = os.path.join( self.frt_datadir, filename)
             of = open( fn, "w" )
             json.dump( fc, of, indent=indent )
             of.close()

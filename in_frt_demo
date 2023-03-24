@@ -56,7 +56,7 @@ SECTION frt
   # no. of canopy layers (used to integrate numerically 1st order reflectance)
 
   treeclass ellipsoid birch1
-  treeclass cone spruce1
+  # treeclass cone spruce1
 
   groundmodel lambert 0.2
   # groundmodel lambert simple
@@ -120,7 +120,7 @@ SECTION ellipsoid birch1
   # <lr> is leaf reflectance and <lt> leaf trasnmittance; or
   # 'leafmodel file <filename>', file <filename> has to contain
   # in columns wavelength (increasing, in nm), reflectance, transmittance.
-  scale_needle FALSE	  # whether to use ssc and p-theory to scale albedo -> shoot albedo
+  scale_needle FALSE	  # whether to use ssc and p-theory to scale needle albedo -> shoot albedo
   #	scale_needle is relevant if ssc<1 and should be used for conifers
 END SECTION
 

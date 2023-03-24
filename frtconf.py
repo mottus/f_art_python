@@ -60,7 +60,7 @@ frtconf['TreeClasses'][0]['DryLeafWeight'] = 9.3  # dry leaf weight per tree, kg
 frtconf['TreeClasses'][0]['SLW'] = 161.3  # specific leaf weight, g m^-2. SLW and DryLeafWeight used to compute LAI
 frtconf['TreeClasses'][0]['BAILAI'] = 0.18  # BAI / LAI [BAI = branch area index]
 frtconf['TreeClasses'][0]['TreeClumping'] = 1.5  # tree distribution parameter
-frtconf['TreeClasses'][0]['ShootClumping'] = 0.558  # shoot shading coefficient
+frtconf['TreeClasses'][0]['ShootClumping'] = 0.558  # shoot shading coefficient (ssc)
 frtconf['TreeClasses'][0]['ShootLength'] =  0.1  # shoot length [m]. If no shoots, set to approx. leaf size
 frtconf['TreeClasses'][0]['LeafRefl'] = [0.07636803, 0.07971808, 0.10241867, 0.17387372, 0.15803358] # if not given, LeafReflFile must be given
 frtconf['TreeClasses'][0]['LeafTrans'] = [0.01553344, 0.02037519, 0.04619775, 0.12199694, 0.11064153] # if not given, LeafReflFile must be given
@@ -72,6 +72,7 @@ frtconf['TreeClasses'][0]['BranchReflFile'] = "branchspectrum_pine.txt" # branch
 # frtconf['TreeClasses'][0]['TrunkRefl'] = [0.3604, 0.3773, 0.3921, 0.4049, 0.4156] # if not given, TrunkReflFile must be given
 frtconf['TreeClasses'][0]['TrunkReflFile'] = "trunkspectrum_pine.txt" # branch reflectance file, optional: not used if TrunkRefl given
 frtconf['TreeClasses'][0]['WaxCorrectionFactor'] = 1  # Optional: wax refractive index correction factor. Default 1. Setting to 0 will remove specular component.
+frtconf['TreeClasses'][0]['ScaleNeedle'] = True # whether to use ShootClumping and p-theory to scale albedo -> shoot albedo, relevant only if ssc<1 (conifers)
 
 # second tree class, python #1
 frtconf['TreeClasses'].append( {} )
@@ -92,7 +93,7 @@ frtconf['TreeClasses'][1]['ShootLength'] = 0.2
 frtconf['TreeClasses'][1]['LeafReflFile'] = "leafspectrum_spruce.txt"
 frtconf['TreeClasses'][1]['BranchReflFile'] = "branchspectrum_spruce.txt"
 frtconf['TreeClasses'][1]['TrunkReflFile'] = "branchspectrum_spruce.txt"
-
+frtconf['TreeClasses'][1]['ScaleNeedle'] = True
 
 # third tree class, python #2
 frtconf['TreeClasses'].append( {} )
@@ -112,3 +113,4 @@ frtconf['TreeClasses'][2]['ShootLength'] = 0.4
 frtconf['TreeClasses'][2]['LeafReflFile'] = "leafspectrum_birch.txt"
 frtconf['TreeClasses'][2]['BranchReflFile'] = "branchspectrum_birch.txt"
 frtconf['TreeClasses'][2]['TrunkReflFile'] = "branchspectrum_birch.txt"
+frtconf['TreeClasses'][2]['ScaleNeedle'] = False
