@@ -32,7 +32,7 @@ print(" done. see G.R and G.T")
 # OPTION B: use Fortran77 FRT input file (text file)
 # this f77 mode
 # frt_srcdir is needed if compiled fortran modules are used
-# frt_srcdir = current_dir # the place where the compiled f77 modules are, assuming in the same folder as this script
-# H = frt_model( frt_srcdir )
-# H.read_conf( os.path.join( current_dir, "in_frt_demo" ), frt_dir )
+frt_srcdir = current_dir # the place where the compiled f77 modules are, assuming in the same folder as this script
+H = frt_model( frt_srcdir )
+H.read_conf( os.path.join( current_dir, "in_frt_demo" ), frt_dir )
 # H.reflectance()

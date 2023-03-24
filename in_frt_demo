@@ -56,7 +56,7 @@ SECTION frt
   # no. of canopy layers (used to integrate numerically 1st order reflectance)
 
   treeclass ellipsoid birch1
-  treeclass ellipsoid birch1
+  treeclass cone spruce1
 
   groundmodel lambert 0.2
   # groundmodel lambert simple
@@ -120,28 +120,29 @@ SECTION ellipsoid birch1
   # <lr> is leaf reflectance and <lt> leaf trasnmittance; or
   # 'leafmodel file <filename>', file <filename> has to contain
   # in columns wavelength (increasing, in nm), reflectance, transmittance.
+  scale_needle FALSE	  # whether to use ssc and p-theory to scale albedo -> shoot albedo
+  #	scale_needle is relevant if ssc<1 and should be used for conifers
 END SECTION
 
-SECTION cone example
+SECTION cone spruce1
   species spruce
   density 0.06            # stand density, m^-2
-  height 6.95             # tree height, m
-  crownlength 3           # crown length, m
-  cyllength 2             # length of cyl. part, m
-  crownradius 1.00        # crown radius, m
-  trunkdiameter 7.13      # trunk diameter, cm
-  dlw 0.9                 # dry leaf weight per tree, kg
-  slw 167                 # specific leaf weight, g m^-2
-  bai/lai .1              # BAI / LAI
-  tdp 1                   # tree distribution parameter c_B
-    # in Eq. (10) of Nilson (1999)
-  ssc 1                   # shoot shading coefficient
-  nlayers 4               # no. of crown layers
+  height 7.5              # tree height, m
+  crownlength 7.0         # crown length, m
+  cyllength 4.2           # length of cyl. part, m
+  crownradius 1.17        # crown radius, m
+  trunkdiameter 8.3       # trunk diameter, cm
+  dlw 2.38                # dry leaf weight per tree, kg
+  slw 202.0               # specific leaf weight, g m^-2
+  bailai 0.18             # BAI / LAI
+  tdp 1.5                 # tree distribution parameter c_B
+  ssc 0.644               # shoot shading coefficient
   shl 0.1                 # shoot length
   wax_cf 1                # wax refractive index correction factor
   br_refl file branchspectrum_spruce.txt     
   tr_refl file branchspectrum_spruce.txt     
   leafmodel file leafspectrum_spruce.txt
+  scale_needle TRUE       # whether to use ssc and p-theory to scale needle albedo -> shoot albedo
 END SECTION
 
 

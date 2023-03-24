@@ -981,7 +981,7 @@ c  IN: ifh: input file handle
 c    itype: 1 = ellipsoid, 2 = cylinder+cone
 c  INOUT: XC, IC, SPCIN model input parameter matrices
 c  OUT: XC: model input parameter matrices
-c   DESC: character array for stand description and class species' names
+c  INOUT DESC: character array for stand description and class species' names
       implicit none
       include 'cf_new.h'
       integer ifh, itype
@@ -1000,7 +1000,8 @@ c       field names
 c       whether a value has been found in the file
       logical use_p
 c       use_p: whether the reflectance spectra are given for a needle and we need to scale
-c       it to a highel level (e.g., shoot) using p calculated from ssc
+c        it to a highel level (e.g., shoot) using p calculated from ssc. 
+c        use_p is determined from input parameter scale_needle
       character*30 field, stemp, stemp2
       character*30 st, sn 
 c       requested SECTION type & name
@@ -1120,7 +1121,7 @@ c                now data fields
                   rv = .true.
                 elseif ( i .eq. 13 ) then ! br_refl
                   read(buff,*,iostat=ierr) field, rtemp
-c                 test if a number is directly after the keyword an undocumented option
+c                 test if a number is directly after the keyword: an undocumented option
                   if (  ierr .ne. 0 ) read(buff,*,iostat=ierr) 
      &              field, st, rtemp
 c                   if there was an error, the word 'fixed' is between tr_refl and value 
@@ -1155,7 +1156,7 @@ c                 if leafmodel = fixed, read reflectance and transmittance
                 elseif ( i .eq. 17 ) then ! wax_cf
                   read(buff,*,iostat=ierr) field, XC(nn,12)
                   rv = .true.
-                elseif ( i .eq. 18 ) then ! use_p
+                elseif ( i .eq. 18 ) then ! scale_needle
                   read(buff,*,iostat=ierr) field, use_p
                   rv = .true.
                 endif
@@ -1227,7 +1228,8 @@ c             preserve R/T ratio. Currently, no better option.
             SPCIN(iw,nclmax+nn+7)=SPCIN(iw,nclmax+nn+7)*(1-p)/(1-p*w)
           endif
         enddo
-        write(*,*) 'Scaled leaf R & T using p=',p
+        write(*,'(a,f4.2,a,i2,a,a)') 'Scaled leaf R & T using p=',p, 
+     & ' for tree class ',nn,':',DESC(nn+1)
       endif
 c
       IC(1) = nn
