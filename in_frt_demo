@@ -190,7 +190,7 @@ SECTION GLcubature GL91
   # Gauss-Lagrange cubature over zenith & azimuth angle:
   # G-L over zenith and uniform over azimuth. No. of knots:
   theta 9
-  phi 1
+  phi 5
 END SECTION
 
 # a newline or a comment line is required at the end of the file

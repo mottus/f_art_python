@@ -7,7 +7,8 @@ import sys
 def rintegr(xxx):
     return (1 - np.exp(-xxx))/xxx
 
-def eint(xy): return (1.0 - np.exp(-xy))/xy
+def eint( xy ):
+    return np.where( xy==0, 1, (1.0 - np.exp(-xy))/xy)
 
 
 def CI_minfun( FGI, clmpst ):
