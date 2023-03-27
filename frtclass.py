@@ -684,7 +684,7 @@ class frt_model:
 
     def corrfact( self, ignore_configured=False ):
         """ compute the spectral correction factor to conserve energy between the geometric-
-            optic and two-stream submodels
+            optic and two-stream submodels, self.CorrectionFactor
 
         See documentation and Mõttus, M., Stenberg, P. & Rautiainen, M. (2007). Photon recollision
         probability in heterogeneous forest canopies: compatibility with a hybrid GO model.

@@ -72,7 +72,7 @@ frtconf['TreeClasses'][0]['BranchReflFile'] = "branchspectrum_pine.txt" # branch
 # frtconf['TreeClasses'][0]['TrunkRefl'] = [0.3604, 0.3773, 0.3921, 0.4049, 0.4156] # if not given, TrunkReflFile must be given
 frtconf['TreeClasses'][0]['TrunkReflFile'] = "trunkspectrum_pine.txt" # branch reflectance file, optional: not used if TrunkRefl given
 frtconf['TreeClasses'][0]['WaxCorrectionFactor'] = 1  # Optional: wax refractive index correction factor. Default 1. Setting to 0 will remove specular component.
-frtconf['TreeClasses'][0]['ScaleNeedle'] = True # whether to use ShootClumping and p-theory to scale albedo -> shoot albedo, relevant only if ssc<1 (conifers)
+frtconf['TreeClasses'][0]['ScaleNeedle'] = True # whether to use ShootClumping and p-theory to scale needle albedo -> shoot albedo, relevant only if ssc<1 (conifers)
 
 # second tree class, python #1
 frtconf['TreeClasses'].append( {} )
