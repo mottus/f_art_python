@@ -239,18 +239,3 @@ c
 *
 ************************************************************************
 *
-      subroutine enel_incl()
-!     function to get the common blocks and the parameters in frtpar.h into python
-!     the parameters are returned in /frtpar/, accessible by F2PY after running the function
-!     retrieve in python using e.g. enel3.frtpar.fnclmax[()]
-      implicit none
-c     different names have to be used for parameters, common block variables and dummy variables
-      integer fnclmax,fncub,fnspchnl,fnknotm,fnphim
-      include 'frtpar.h'
-      common /frtpar/ fnclmax, fncub, fnspchnl, fnknotm, fnphim      
-      fnclmax = nclmax
-      fncub = ncub
-      fnspchnl = nspchnl
-      fnknotm = nknotm
-      fnphim = nphim
-      end

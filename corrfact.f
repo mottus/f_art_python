@@ -7,7 +7,7 @@
 !  depends on comprt.o and all dependencies therein
 !  compile with sth like
 ! f2py.exe -c --compiler=mingw32 -m corrfact comprt.o bck3.o bgrdd.o enel3.o hetk8o.o hetk8s.o layer.o optmean.o rmsub.o spooi.o strmean.o twostr.o corrfact.f
-!     Compute the correctcompion factor for matching frt first- and higher-order scattering
+!     Compute the correction factor for matching frt first- and higher-order scattering
 !     See documentation and Mõttus, M., Stenberg, P. & Rautiainen, M. (2007). Photon recollision 
 !       probability in heterogeneous forest canopies: compatibility with a hybrid GO model. 
 !       Journal of Geophysical Research – Atmospheres 112, D03104, doi: 10.1029/2006JD007445.
@@ -99,13 +99,7 @@ c     set ijob to flux computation
         cf(jwl)=( 1-(SPCOUT(jwl,3)+SPCOUT(jwl,7)+XOUT(18)) ) / ho_rt
         write(*,'(a,f6.1,a,f10.6)') 'wl (nm)=',SPCIN(jwl,1),
      &            ' correction_factor=', cf(jwl)
-      write(*,'(5f6.3)')SPCOUT(jwl,5),(SPCOUT(jwl,2)-SPCOUT(jwl,7)),
-     &   SPCOUT(jwl,3),SPCOUT(jwl,7),XOUT(18) ! XXX
-!    XXX print leaf R and T , and effective element R and T
-      write(*,'(8f7.3)') SPCIN2(jwl,7+1), SPCIN2(jwl,7+nclmax+1),
-     & SPCIN2(jwl,7+2), SPCIN2(jwl,7+nclmax+2),
-     & SPCIN2(jwl,7+3), SPCIN2(jwl,7+nclmax+3),
-     & SPCOUT(jwl,8),SPCOUT(jwl,9)
+
       enddo
       return
       end

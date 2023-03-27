@@ -3,23 +3,36 @@
 import numpy as np
 
 frtconf = {} # create empty dict
+# ---- technical parameters for the model
+# Size of the cubature (quadrature) for flux computations. Optional, a "reasonable" cubature is predefined
+frtconf['nquad_t'] = 7 # Optional: number of cubature knots oer the polar angle (theta)
+frtconf['nquad_p'] = 7 # Optional: number of cubature knots oer the azimuth angle (phi) in the range [0,pi) (model is symmetrical)
+frtconf['nzs'] = 4 # Optional: no. of canopy layers (used to integrate numerically 1st order reflectance). A reasonable default value has been set in code.
+frtconf['wlcorr'] = 0 # Optional: the wavelength or thewavelength index for which the correction between first-order and higher order submodels is computed.
+# By default, all wavelengths are used (value 0). A positive value indicates wavelength and is matched against wl (closest value is found); a negative value (should be integer) is index in wl.
+# set to a very large negative value (out of bounds index, e.g., -1000000) to disable correction
 
-frtconf['Description'] = "plot_813030"          # optional, not used in computations
-frtconf['Age'] =  35                   # optional, not used in computations
+frtconf['correctFGI'] = True # optional, defaults to True: whether to correct for the unrealistic case of canopy cover  > crown cover
 
+# ---- environmand environmental parameters
 frtconf['thetv'] = 0*np.pi/180 # view zenith angle [rad]
 frtconf['thets'] = 40*np.pi/180 # solar zenith angle [rad]
 frtconf['phiv'] = 0*np.pi/180 # relative view azimuth angle [rad]
 
-frtconf['wl'] = [ 450, 480, 510, 540, 570 ]
 # frtconf['wl'] = np.arange( 400, 2400, 5 )
 # The wavelength used in the model. They serve as labels. The length of wl vector sets the
 #   length requirement for all other input spectral vectors. For spectral data read from
 #   external files, the values will be interpolated to the values in wl
+frtconf['SQratio'] = np.ones_like( frtconf['wl'] )*1.0 # S/Q ratio: ratio of direct to total irradiance. Vector of the same length as wl
+
+frtconf['wl'] = [ 450, 480, 510, 540, 570 ]
 frtconf['i1'] = 1 # Optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to 1. Note: indexing starts from 1 (human, not python style)
 frtconf['i2'] = len(frtconf['wl']) # optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to len(wl)
 
-frtconf['SQratio'] = np.ones_like( frtconf['wl'] )*1.0 # S/Q ratio: ratio of direct to total irradiance. Vector of the same length as wl
+
+# ---- parameters quantifying the fores stand
+frtconf['Description'] = "plot_813030"          # optional, not used in computations
+frtconf['Age'] =  35                   # optional, not used in computations
 
 # frtconf['WaxRefrInd'] = [1.4955, 1.491 , 1.4861, 1.4774, 1.4662]
 # Wax refractive index (e.g., from the Prospect model) for the wavelngths in wl
@@ -37,16 +50,10 @@ frtconf['rSSground'] = frtconf['rDDground'] # Sun-Sensor reflectance (BDRF). If 
 frtconf['rSSgroundFile'] = "understory_fertility4.txt" # not used if rSSground is available
 
 frtconf['pkhair'] = 1 # Optional: leaf hair optical index (vaguely defined, set to unity by default)
-# Size of the cubature (quadrature) for flux computations. Optional, a "reasonable" cubature is predefined
-frtconf['nquad_t'] = 7 # Optional: number of cubature knots oer the polar angle (theta)
-frtconf['nquad_p'] = 7 # Optional: number of cubature knots oer the azimuth angle (phi) in the range [0,pi) (model is symmetrical)
-frtconf['nzs'] = 4 # Optional: no. of canopy layers (used to integrate numerically 1st order reflectance). A reasonable default value has been set in code.
-frtconf['wlcorr'] = 0 # Optional: the wavelength or thewavelength index for which the correction between first-order and higher order submodels is computed.
-# By default, all wavelengths are used (value 0). A positive value indicates wavelength and is matched against wl (closest value is found); a negative value (should be integer) is index in wl.
-# set to a very large negative value (out of bounds index, e.g., -1000000) to disable correction
 
+
+# ---- individual tree class descriptions
 frtconf['TreeClasses'] = [ {} ] # tree classes are dicts inside the list 'TreeClasses'
-
 # The first tree class, python numbering starts from 0
 frtconf['TreeClasses'][0]['Description'] = "pine" # arbitrary name
 frtconf['TreeClasses'][0]['l_elli'] = True # Flag: wheter the class is ellipsoid (alternatively, cone+cylinder)
@@ -59,7 +66,7 @@ frtconf['TreeClasses'][0]['DBH'] = 23.6  # trunk diameter (diameter at breast he
 frtconf['TreeClasses'][0]['DryLeafWeight'] = 9.3  # dry leaf weight per tree, kg
 frtconf['TreeClasses'][0]['SLW'] = 161.3  # specific leaf weight, g m^-2. SLW and DryLeafWeight used to compute LAI
 frtconf['TreeClasses'][0]['BAILAI'] = 0.18  # BAI / LAI [BAI = branch area index]
-frtconf['TreeClasses'][0]['TreeClumping'] = 1.5  # tree distribution parameter
+frtconf['TreeClasses'][0]['TreeClumping'] = 1.5  # tree distribution parameter, used to compute Fisher's Index. Small TreeClumping > large FI > clustered distribution
 frtconf['TreeClasses'][0]['ShootClumping'] = 0.558  # shoot shading coefficient (ssc)
 frtconf['TreeClasses'][0]['ShootLength'] =  0.1  # shoot length [m]. If no shoots, set to approx. leaf size
 frtconf['TreeClasses'][0]['LeafRefl'] = [0.07636803, 0.07971808, 0.10241867, 0.17387372, 0.15803358] # if not given, LeafReflFile must be given

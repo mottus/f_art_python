@@ -9,7 +9,7 @@ def rintegr(xxx):
 
 def eint( xy ):
     return np.where( xy==0, 1, (1.0 - np.exp(-xy))/xy)
-
+# eint will create an invalid value warning if xy==0 (view and solar angles coincide)
 
 def CI_minfun( FGI, clmpst ):
     """ minimization function for finding Fischer's grouping index FGI from

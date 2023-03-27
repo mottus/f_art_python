@@ -40,7 +40,7 @@ c   rmcrown: mean crown radius
 c   dbhmean: mean dbh
 c   rmassm: mean leaf mass per m^2
 c   slwm: mean SLW
-c   vliit: crown closure
+c   vliit: crown cover
 c   cano: canopy cover
 c   tlty: total unprojected below-crown trunk area per m^2 (below crown, calculated as pi*dbh*l0/2)
 c   tlaief: total effective LAI (corrected for shoot-level clumping)

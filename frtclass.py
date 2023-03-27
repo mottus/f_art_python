@@ -43,6 +43,7 @@ class frt_model:
         self.NeededClassKeys = ['l_elli', 'StandDensity', 'TreeHeight', 'CrownLength1',
             'CrownRadius', 'DBH', 'DryLeafWeight', 'SLW', 'BAILAI', 'TreeClumping', 'ShootClumping',
             'ShootLength' ]
+        self.correctFGI = True # whether to correct for the unrealistic case of canopy cover  > crown cover
 
     def load_conf( self, frtconf, frt_datadir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
@@ -208,7 +209,10 @@ class frt_model:
         self.frtconf["TreeClasses"] = []
         for i in range( n_classes ):
             self.frtconf["TreeClasses"].append( { "Description": DESC[i+1] } )
-        self.frtconf["wlcorr"] = IC[1]
+        # read the correction wavelength index. The subroutine always returns a positive integer.
+        #   For no correction, fortran code sets it as "IC(2) = IC(11)+100"
+        # in python, integer indices are gien as negative values
+        self.frtconf["wlcorr"] = -IC[1]
         self.frtconf["nzs"] = IC[2]
         # the flags below (IC[4:9]) are irrelevant and are not read from the input file
         self.frtconf["i1"] = IC[9] # retain indexing from 1, switch to python style later
@@ -366,6 +370,7 @@ class frt_model:
         self.nzs = self.load_optional_confparameter("nzs",4)
         self.nquad_p = self.load_optional_confparameter( "nquad_p", 7 )
         self.nquad_t = self.load_optional_confparameter( "nquad_t", 7 )
+        self.correctFGI = self.load_optional_confparameter( "correctFGI", True )
         self.thetv = self.frtconf["thetv"]
         self.phiv = self.frtconf["phiv"]
         self.thets = self.frtconf["thets"]
@@ -472,6 +477,17 @@ class frt_model:
                 # brentq imported from scipy.optimize as the most "generic" method suggested there
                 self.FGI.append ( brentq( CI_minfun, 0.0005, 7, args=self.TreeClumping[i] ) )
             # ShootLength cannot be zero, use a minimum of 1 cm.
+            if self.correctFGI:
+                # correct for the unrealistic case of canopy cover  > crown cover by adjusting Fisher's index FGI
+                # according to Nilson and Kuusk (2004, Agricultural and Forest Meteorology 124, 157–169)
+                #  if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
+                # This sets the practical lower limit on the FGI regularity: even lower FGI would indicate even more
+                # regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
+                CrownCover_i = self.StandDensity[i]*self.CrownRadius[i]**2
+                if self.FGI[i] < (1-CrownCover_i):
+                    self.FGI[i] = 1-CrownCover_i
+                    print("\ncorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]) )
+
             if self.ShootLength[i] <= 0:
                 # XXX give a warning somewhere
                 self.ShootLength[i] = 0.01
@@ -479,7 +495,7 @@ class frt_model:
         # CALCULATE MEAN PARAMETERS FOR THE STAND (averaged over tree classes)
         self.strmean()
         #  strmean() sets up self.ulg, self.uuu, self.OpticalLAI, self.StandTreeDensity, self.MeanTreeHeight, self.MeanCrownLengthEllipsoid,
-        #    self.MeanLengthCylinder, self.MeanCrownRadius, self.MeanDBH, self.MeanLeafMass, self.MeanSLW, self.CrownClosure,
+        #    self.MeanLengthCylinder, self.MeanCrownRadius, self.MeanDBH, self.MeanLeafMass, self.MeanSLW, self.CrownCover,
         #    self.CanopyCover, self.TrunkAreaBelowCrown, self.StandEffectiveLAI, self.StandLAI, self.StandBAI
 
         # gaps for the directions in the cubature
@@ -816,7 +832,7 @@ class frt_model:
         glmp_F[0:ncl] = self.FGI
 
         self.ulgF, self.uuuF, self.OpticalLAIF, self.StandTreeDensityF, self.MeanTreeHeightF, self.MeanCrownLengthEllipsoidF, self.MeanLengthCylinderF, \
-            self.MeanCrownRadiusF, self.MeanDBHF, self.MeanLeafMassF, self.MeanSLWF, self.CrownClosureF, self.CanopyCoverF, self.TrunkAreaBelowCrownF, \
+            self.MeanCrownRadiusF, self.MeanDBHF, self.MeanLeafMassF, self.MeanSLWF, self.CrownCoverF, self.CanopyCoverF, self.TrunkAreaBelowCrownF, \
             self.StandEffectiveLAIF, self.StandLAIF, self.StandBAIF = strmean.strmean( l_elli_F, ncl,
             stdns_F, htr_F, hc1_F, hc2_F, rcr_F, dbh_F, rmass_F, slwcl_F, rlai_F, rbai_F, clmpst_F, clmpsh_F, glmp_F)
         self.EffectivePAIF  = ( self.StandEffectiveLAIF + sum(self.BAI) + self.TrunkAreaBelowCrownF ) # total effective PAI, leaves + branches + stems
@@ -838,7 +854,8 @@ class frt_model:
         MeanDBH: mean dbh  (f77: dbhmean)
         MeanLeafMass: mean leaf mass per m^2  (f77: rmassm)
         MeanSLW: mean SLW  (f77: slwm)
-        CrownClosure: crown closure (f77: vliit)
+        CrownCover: crown closure (f77: vliit) a.a. crown cover.
+           NOTE: CrownCover is defined as sum of crown areas over unit area, can be larger than one
         CanopyCover: canopy cover (f77: cano)
         MeanCrownVolume: mean crown volume NOTE: not used anywhere? (f77: ruum)
         TrunkAreaBelowCrown: total projected below-crown trunk area per m^2 calculated as pi*dbh*l0/2) (f77:tlty)
@@ -857,7 +874,7 @@ class frt_model:
         self.MeanDBH = 0
         self.MeanLeafMass = 0
         self.MeanSLW = 0
-        self.CrownClosure = 0
+        self.CrownCover = 0
         self.CanopyCover = 0
         self.MeanCrownVolume = 0
         self.StandLAI = 0
@@ -884,7 +901,7 @@ class frt_model:
             self.MeanLeafMass += stdi*self.DryLeafWeight[i] # leaf mass per m^2
             self.MeanSLW += stdi*self.SLW[i] # weighted sum of SLW
             r2stdi = stdi*ri2
-            self.CrownClosure += r2stdi # weighted sum of crown radii^2
+            self.CrownCover += r2stdi # weighted sum of crown radii^2
             self.CanopyCover += self.TreeClumping[i]*r2stdi # used for calculating canopy closure
             self.TrunkAreaBelowCrown += stdi*self.DBH[i]*(self.TreeHeight[i] - vhi)
                                     # total projected trunk area below crown
@@ -905,7 +922,7 @@ class frt_model:
         self.MeanDBH /= self.StandTreeDensity
         self.MeanLeafMass /= self.StandTreeDensity
         self.MeanSLW /= self.StandTreeDensity
-        self.CrownClosure *= np.pi
+        self.CrownCover *= np.pi
         self.CanopyCover = 1 - np.exp(-np.pi*self.CanopyCover)
         self.TrunkAreaBelowCrown *= np.pi*.5 #  projection factor 0.5
 

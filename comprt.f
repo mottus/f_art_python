@@ -53,7 +53,7 @@ c  8 mean SLW, slwm
 c  9 total BAI (branch area index) so that PAI = tlai+tbai, tbai
 c 10 total effective LAI, corrected for shoot level clumping, tlaief
 c 11 total lai (leaves only), tlai
-c 12 crown closure (sum of crown areas / stand area), vliit
+c 12 crown cover (sum of crown areas / stand area), vliit
 c 13 canopy cover, cano
 c 14 Diffuse non-interceptance, i-i0 integrated over hemisphere DIFN
 c 15 Effective (optical) PAI as inverted from Miller's equation optPAI
@@ -139,7 +139,7 @@ c ------ DERIVED TREE CLASS-SPECIFIC STAND PARAMETERS
       save rlai, rbai, glmp, ncl, lelli
 c rlai: LAI (no branches etc.) - from crown leaf area 
 c rbai: branch area index (BAI) - from BAI/LAI ratio
-c glmp: Fischer's grouping index  - tree distribution parameter
+c glmp: Fisher's grouping index  - tree distribution parameter
 c ncl: number of canopy classes (from IC(1))
 c nzs: no. of crown layers in numerical integration (old n_zs)
 c lelli(i): logical flag: are crowns of class i ellipsoids?
@@ -284,7 +284,9 @@ c  f_down1: 1st order flux transmittance component, f_down1 is included in f_dow
 
 c ------  MISC ------
       double precision c_fact
-c c_fact: correction factor for diffuse fluxes (to correct for the error in estimating 1st order scattering) at current wavelength
+c     c_fact: correction factor for diffuse fluxes (to correct for the error in estimating 1st order scattering) at current wavelength
+	  double precision CrC_i
+c     CrC_i: temp variable for Crown Cover of a class
 
 c     current wavelength 
       double precision rlambda, x1, x2
@@ -375,8 +377,19 @@ c          lelli = ( IC(i+11) > 0, i = 1, ncl )
           rbai(jcl)   = XC(jcl, 9)*rlai(jcl) ! BAI
           clmpst(jcl) = XC(jcl, 10) ! tree distr. parameter
 c                                      =cB in eq. (11) in Nilson 1999
-c         calculate glmp: Fischer's grouping index
+c         calculate glmp: Fisher's grouping index
           call iterats(clmpst(jcl), glmp(jcl))
+c         correct for the unrealistic case of canopy cover  > crown cover by adjusting Fisher's index FGI
+c         according to Nilson and Kuusk (2004, Agricultural and Forest Meteorology 124, 157–169)
+c         if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
+c         This sets the practical lower limit on the FGI regularity: even lower FGI would indicate even more
+c         regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
+          CrC_i = stdns(jcl)*rcr(jcl)**2 
+          if ( glmp(jcl) .lt. (1.0-CrC_i) ) then
+            glmp(jcl) = 1.0-CrC_i
+            write(*,'(a,i2,a,F5.3)')
+     &        "corrected FGI of tree class",jcl,":",glmp(jcl)
+		  endif
           clmpsh(jcl) = XC(jcl, 11) ! shoot shading coef (ssc)
           crncl(jcl) = XC(jcl, 12) ! wax refration index ratio
           shl(jcl)   = XC(jcl, 13)
@@ -428,7 +441,7 @@ c         rmcrown: mean crown radius
 c         dbhmean: mean dbh
 c         rmassm: mean leaf mass per m^2
 c         slwm: mean SLW
-c         vliit: crown closure
+c         vliit: crown cover
 c         cano: canopy cover
 c         tlty: total unshaded trunk area per m^2 (below crown, calculated as pi*dbh*l0)
 c         tlaief: total effective LAI (corrected for shoot-level clumping)
