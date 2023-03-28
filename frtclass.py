@@ -485,13 +485,12 @@ class frt_model:
                 # if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
                 # This sets the practical lower limit on the FGI regularity: even lower FGI would indicate even more
                 # regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
-                CrownCover_i = self.StandDensity[i]*self.CrownRadius[i]**2
+                CrownCover_i = np.pi*(self.StandDensity[i]*self.CrownRadius[i]**2)
                 if self.FGI[i] < (1-CrownCover_i):
                     self.FGI[i] = 1-CrownCover_i
                     print("\ncorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]) )
                     
-                    # Note: if we change Fisher's Groupig Index, we need to change also tree distribution parameter TDP
-                    old_TDP = self.TDP[i]
+                    # Note: if we change Fisher's Grouping Index, we need to change also tree distribution parameter TDP
                     GI = 1-CrownCover_i
                     if GI==1:
                         new_TDP = 1
@@ -499,18 +498,13 @@ class frt_model:
                         new_TDP = (-np.log(GI)) / (1-GI)
                     # Update the TDP value
                     self.TDP[i] = new_TDP
-                    print("\n\nTDP value changed: {} ---> {}".format(round(old_TDP,1), round(new_TDP,1)))
 
             if self.ShootLength[i] <= 0:
                 # XXX give a warning somewhere
                 self.ShootLength[i] = 0.01
 
-        # Update self.TreeClumping with the (possibly) new TDP values
-        print("\nOLD -- self.TreeClumping:")
-        print(self.TreeClumping)
+        # Update self.TreeClumping with the new TDP values
         self.TreeClumping = self.TDP
-        print("\nNEW -- self.TreeClumping:")
-        print(self.TreeClumping)
         
         # CALCULATE MEAN PARAMETERS FOR THE STAND (averaged over tree classes)
         self.strmean()
