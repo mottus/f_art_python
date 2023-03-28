@@ -382,7 +382,7 @@ c         according to Nilson and Kuusk (2004, Agricultural and Forest Meteorolo
 c         if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
 c         This sets the practical lower limit on the FGI regularity: even lower FGI would indicate even more
 c         regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
-          vliit = stdns(jcl)*rcr(jcl)**2 
+          vliit = pi*stdns(jcl)*rcr(jcl)**2 
           if ( glmp(jcl) .lt. (1.0-vliit) ) then
             glmp(jcl) = 1.0-vliit
 			clmpst(jcl) = -log(glmp(jcl))/(1-glmp(jcl))
