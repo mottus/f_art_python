@@ -285,8 +285,6 @@ c  f_down1: 1st order flux transmittance component, f_down1 is included in f_dow
 c ------  MISC ------
       double precision c_fact
 c     c_fact: correction factor for diffuse fluxes (to correct for the error in estimating 1st order scattering) at current wavelength
-	  double precision CrC_i
-c     CrC_i: temp variable for Crown Cover of a class
 
 c     current wavelength 
       double precision rlambda, x1, x2
@@ -384,9 +382,10 @@ c         according to Nilson and Kuusk (2004, Agricultural and Forest Meteorolo
 c         if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
 c         This sets the practical lower limit on the FGI regularity: even lower FGI would indicate even more
 c         regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
-          CrC_i = stdns(jcl)*rcr(jcl)**2 
-          if ( glmp(jcl) .lt. (1.0-CrC_i) ) then
-            glmp(jcl) = 1.0-CrC_i
+          vliit = stdns(jcl)*rcr(jcl)**2 
+          if ( glmp(jcl) .lt. (1.0-vliit) ) then
+            glmp(jcl) = 1.0-vliit
+			clmpst(jcl) = -log(glmp(jcl))/(1-glmp(jcl))
             write(*,'(a,i2,a,F5.3)')
      &        "corrected FGI of tree class",jcl,":",glmp(jcl)
 		  endif
