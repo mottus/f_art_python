@@ -463,8 +463,10 @@ class frt_model:
                 print("configure_frt(): Error has occurred, aborting.")
                 return
 
-        self.FGI = [] # Fischer's Grouping Index, 'glmp' in f77
+        self.FGI = [] # Fisher's Grouping Index, 'glmp' in f77
+        self.TDP = [] # Tree distribution parameter TDP <==> TreeClumping
         for i in range(self.ncl):
+            self.TDP.append( self.TreeClumping[i] )
             #    FGI: see Eq. (8) by Nilson (1999).
             # The original limits in f77 code for FGI were 0.001 and 6.
             # Stick to these, although the former is never reached (TreeClumping=7)
@@ -478,20 +480,38 @@ class frt_model:
                 self.FGI.append ( brentq( CI_minfun, 0.0005, 7, args=self.TreeClumping[i] ) )
             # ShootLength cannot be zero, use a minimum of 1 cm.
             if self.correctFGI:
-                # correct for the unrealistic case of canopy cover  > crown cover by adjusting Fisher's index FGI
+                # correct for the unrealistic case of canopy cover > crown cover by adjusting Fisher's index FGI
                 # according to Nilson and Kuusk (2004, Agricultural and Forest Meteorology 124, 157–169)
-                #  if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
+                # if no overlapping crowns appears (canopy cover = crown cover), FGI = 1-CrownCover.
                 # This sets the practical lower limit on the FGI regularity: even lower FGI would indicate even more
                 # regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
                 CrownCover_i = self.StandDensity[i]*self.CrownRadius[i]**2
                 if self.FGI[i] < (1-CrownCover_i):
                     self.FGI[i] = 1-CrownCover_i
                     print("\ncorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]) )
+                    
+                    # Note: if we change Fisher's Groupig Index, we need to change also tree distribution parameter TDP
+                    old_TDP = self.TDP[i]
+                    GI = 1-CrownCover_i
+                    if GI==1:
+                        new_TDP = 1
+                    else:
+                        new_TDP = (-np.log(GI)) / (1-GI)
+                    # Update the TDP value
+                    self.TDP[i] = new_TDP
+                    print("\n\nTDP value changed: {} ---> {}".format(round(old_TDP,1), round(new_TDP,1)))
 
             if self.ShootLength[i] <= 0:
                 # XXX give a warning somewhere
                 self.ShootLength[i] = 0.01
 
+        # Update self.TreeClumping with the (possibly) new TDP values
+        print("\nOLD -- self.TreeClumping:")
+        print(self.TreeClumping)
+        self.TreeClumping = self.TDP
+        print("\nNEW -- self.TreeClumping:")
+        print(self.TreeClumping)
+        
         # CALCULATE MEAN PARAMETERS FOR THE STAND (averaged over tree classes)
         self.strmean()
         #  strmean() sets up self.ulg, self.uuu, self.OpticalLAI, self.StandTreeDensity, self.MeanTreeHeight, self.MeanCrownLengthEllipsoid,
@@ -1078,5 +1098,4 @@ class frt_model:
             self.tttF[:,i] = ttt_i[0:ncl]
             self.MeanReflF[i] = rteff_i
             self.MeanTransF[i] = tteff_i
-
 
