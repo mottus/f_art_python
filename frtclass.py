@@ -464,9 +464,7 @@ class frt_model:
                 return
 
         self.FGI = [] # Fisher's Grouping Index, 'glmp' in f77
-        self.TDP = [] # Tree distribution parameter TDP <==> TreeClumping
         for i in range(self.ncl):
-            self.TDP.append( self.TreeClumping[i] )
             #    FGI: see Eq. (8) by Nilson (1999).
             # The original limits in f77 code for FGI were 0.001 and 6.
             # Stick to these, although the former is never reached (TreeClumping=7)
@@ -489,23 +487,20 @@ class frt_model:
                 if self.FGI[i] < (1-CrownCover_i):
                     self.FGI[i] = 1-CrownCover_i
                     print("\ncorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]) )
-                    
-                    # Note: if we change Fisher's Grouping Index, we need to change also tree distribution parameter TDP
+
+                    # If we change Fisher's Grouping Index, we need to change also tree distribution parameter TDP
                     GI = 1-CrownCover_i
                     if GI==1:
-                        new_TDP = 1
+                        self.TreeClumping[i] = 1
                     else:
-                        new_TDP = (-np.log(GI)) / (1-GI)
-                    # Update the TDP value
-                    self.TDP[i] = new_TDP
-
+                        self.TreeClumping[i] = (-np.log(GI)) / (1-GI)
+                    #
+                #
             if self.ShootLength[i] <= 0:
                 # XXX give a warning somewhere
                 self.ShootLength[i] = 0.01
+            #
 
-        # Update self.TreeClumping with the new TDP values
-        self.TreeClumping = self.TDP
-        
         # CALCULATE MEAN PARAMETERS FOR THE STAND (averaged over tree classes)
         self.strmean()
         #  strmean() sets up self.ulg, self.uuu, self.OpticalLAI, self.StandTreeDensity, self.MeanTreeHeight, self.MeanCrownLengthEllipsoid,

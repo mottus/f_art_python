@@ -2,6 +2,9 @@
 __pycache__
 *_temp
 *.bak
+*.lyx
+*.lyx#
+*.lyx~
 frt
 
 # Prerequisites
