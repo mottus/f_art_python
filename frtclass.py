@@ -863,9 +863,9 @@ class frt_model:
         MeanDBH: mean dbh  (f77: dbhmean)
         MeanLeafMass: mean leaf mass per m^2  (f77: rmassm)
         MeanSLW: mean SLW  (f77: slwm)
-        CrownCover: crown closure (f77: vliit) a.a. crown cover.
+        CrownCover: crown cover (f77: vliit) a.a. crown cover.
            NOTE: CrownCover is defined as sum of crown areas over unit area, can be larger than one
-        CanopyCover: canopy cover (f77: cano)
+        CanopyCover: canopy cover (f77: cano), ignoring within-crown gaps -- assuming opaque crowns
         MeanCrownVolume: mean crown volume NOTE: not used anywhere? (f77: ruum)
         TrunkAreaBelowCrown: total projected below-crown trunk area per m^2 calculated as pi*dbh*l0/2) (f77:tlty)
         StandEffectiveLAI: total effective LAI (corrected for shoot-level clumping) (f77: tlaief)
