@@ -462,7 +462,7 @@ class frt_model:
             if not self.frtconf_isread:
                 print("configure_frt(): Error has occurred, aborting.")
                 return
-
+        ErrorsFixed = False # flag for signaling
         self.FGI = [] # Fisher's Grouping Index, 'glmp' in f77
         for i in range(self.ncl):
             #    FGI: see Eq. (8) by Nilson (1999).
@@ -471,8 +471,14 @@ class frt_model:
             #     XXX give a warning somewhere if limits are reached
             if self.TreeClumping[i] < 0.358352:
                 self.FGI.append( 6.0 )
+                self.TreeClumping[i] = 0.358352
+                print("\nToo small TreeClumping for tree class {:d}, limited to {:5.3f}".format(i,self.TreeClumping[i]), end="" )
+                ErrorsFixed = True
             elif self.TreeClumping[i] > 6.9146699:
                 self.FGI.append( 0.001 )
+                self.TreeClumping[i] = 6.9146699
+                print("\nToo large TreeClumping for tree class {:d}, limited to {:5.3f}".format(i,self.TreeClumping[i]), end="" )
+                ErrorsFixed = True
             else:
                 # brentq imported from scipy.optimize as the most "generic" method suggested there
                 self.FGI.append ( brentq( CI_minfun, 0.0005, 7, args=self.TreeClumping[i] ) )
@@ -486,8 +492,8 @@ class frt_model:
                 CrownCover_i = np.pi*(self.StandDensity[i]*self.CrownRadius[i]**2)
                 if self.FGI[i] < (1-CrownCover_i):
                     self.FGI[i] = 1-CrownCover_i
-                    print("\ncorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]) )
-
+                    print("\nCorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]), end="" )
+                    ErrorsFixed = True
                     # If we change Fisher's Grouping Index, we need to change also tree distribution parameter TDP
                     if self.FGI[i]==1:
                         self.TreeClumping[i] = 1 #
@@ -496,8 +502,9 @@ class frt_model:
                     #
                 #
             if self.ShootLength[i] <= 0:
-                # XXX give a warning somewhere
                 self.ShootLength[i] = 0.01
+                print("\nToo small ShootLength for tree class {:d}, set to {:5.3f}".format(i,self.ShootLength[i]), end="" )
+                ErrorsFixed = True
             #
 
         # CALCULATE MEAN PARAMETERS FOR THE STAND (averaged over tree classes)
@@ -547,6 +554,8 @@ class frt_model:
         # reflectance with the  2-stream submodel
         self.optmean()
 
+        if ErrorsFixed:
+            print("") # add a newline to output
         self.corrfact( ignore_configured=True ) # set the ignore_configured flag as configuration is loaded but flag not set yet
         self.frt_configured = True
 
