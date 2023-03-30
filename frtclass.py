@@ -395,7 +395,11 @@ class frt_model:
         self.LAI = self.StandDensity*self.DryLeafWeight*1000/self.SLW # in f77: rlai
         bailai = self.getarray('BAILAI').astype(float)
         self.BAI = self.LAI*bailai
+<<<<<<< HEAD
         self.ShootLength = self.getarray('ShootLength').astype(float)
+=======
+        self.ShootLength = self.getarray('ShootLength'.astype(float))
+>>>>>>> 66af6ff22ed36edd78f91889cc8b2e551e3a4c23
         self.TreeHeight = self.getarray('TreeHeight').astype(float)
         self.CrownLength1 = self.getarray('CrownLength1').astype(float)
         self.CrownLength2 = self.getarray('CrownLength2').astype(float)
