@@ -365,7 +365,7 @@ class frt_model:
         #   if nquad_p == 1, this leads to the cross plane
         self.Description = self.load_optional_confparameter( "Description", "FRT configuration" )
         self.ncl = len( self.frtconf["TreeClasses"] )
-        self.wl = np.array( self.frtconf["wl"] )
+        self.wl = np.array( self.frtconf["wl"] ).astype(float)
         self.wlcorr = self.load_optional_confparameter( "wlcorr", 0 )
         self.nzs = self.load_optional_confparameter("nzs",4)
         self.nquad_p = self.load_optional_confparameter( "nquad_p", 7 )
@@ -389,20 +389,20 @@ class frt_model:
 
         # store tree class parameters in arrays for computations
         self.l_elli = self.getarray('l_elli')
-        self.StandDensity = self.getarray('StandDensity')
-        self.SLW = self.getarray('SLW')
-        self.DryLeafWeight= self.getarray('DryLeafWeight')
+        self.StandDensity = self.getarray('StandDensity').astype(float)
+        self.SLW = self.getarray('SLW').astype(float)
+        self.DryLeafWeight= self.getarray('DryLeafWeight').astype(float)
         self.LAI = self.StandDensity*self.DryLeafWeight*1000/self.SLW # in f77: rlai
-        bailai = self.getarray('BAILAI')
+        bailai = self.getarray('BAILAI').astype(float)
         self.BAI = self.LAI*bailai
-        self.ShootLength = self.getarray('ShootLength')
-        self.TreeHeight = self.getarray('TreeHeight')
-        self.CrownLength1 = self.getarray('CrownLength1')
-        self.CrownLength2 = self.getarray('CrownLength2')
-        self.CrownRadius = self.getarray('CrownRadius')
-        self.DBH = self.getarray('DBH')/100 # NB! convert from cm to m
-        self.TreeClumping = self.getarray('TreeClumping')
-        self.ShootClumping = self.getarray('ShootClumping')
+        self.ShootLength = self.getarray('ShootLength').astype(float)
+        self.TreeHeight = self.getarray('TreeHeight').astype(float)
+        self.CrownLength1 = self.getarray('CrownLength1').astype(float)
+        self.CrownLength2 = self.getarray('CrownLength2').astype(float)
+        self.CrownRadius = self.getarray('CrownRadius').astype(float)
+        self.DBH = self.getarray('DBH').astype(float)/100 # NB! convert from cm to m
+        self.TreeClumping = self.getarray('TreeClumping').astype(float)
+        self.ShootClumping = self.getarray('ShootClumping').astype(float)
 
         self.xquad_p = [ np.pi/self.nquad_p*(0.5 + i) for i in range(self.nquad_p) ]
         # The quadrature weights combine both theta and phi weights so that cosine
@@ -411,12 +411,12 @@ class frt_model:
         self.xquad_t, self.gq_w = gauleg_numpy(0, np.pi/2, self.nquad_t)
         self.wght_q = 2*self.gq_w*np.cos(self.xquad_t)*np.sin(self.xquad_t) / self.nquad_p
 
-        self.rDDground = np.array( self.frtconf['rDDground'] ) # ground reflectance, Dif->Dif (f77 rddgrou)
-        self.rSDground = np.array( self.frtconf['rSDground'] ) # ground reflectance, Sun->Dif (f77 rsdgrou)
-        self.rDSground = np.array( self.frtconf['rDSground'] ) # ground reflectance, Dif->Sensor (f77 rdsgrou)
-        self.rSSground = np.array( self.frtconf['rSSground']  ) # ground reflectance, Sun->Sensor -- was "so" (Sun->Observer in f77 original code) (f77 rsogrou)
-        self.SQratio = np.array( self.frtconf['SQratio'] ) # f77 sqratio
-        self.WaxRefrInd = self.frtconf['WaxRefrInd']
+        self.rDDground = np.array( self.frtconf['rDDground'], dtype=float ) # ground reflectance, Dif->Dif (f77 rddgrou)
+        self.rSDground = np.array( self.frtconf['rSDground'], dtype=float ) # ground reflectance, Sun->Dif (f77 rsdgrou)
+        self.rDSground = np.array( self.frtconf['rDSground'], dtype=float ) # ground reflectance, Dif->Sensor (f77 rdsgrou)
+        self.rSSground = np.array( self.frtconf['rSSground'], dtype=float  ) # ground reflectance, Sun->Sensor -- was "so" (Sun->Observer in f77 original code) (f77 rsogrou)
+        self.SQratio = np.array( self.frtconf['SQratio'], dtype=float ) # f77 sqratio
+        self.WaxRefrInd = np.array( self.frtconf['WaxRefrInd'], dtype=float )
 
         # mean LEAF, BRANCH, TRUNK REFLECTANCE AND TRANSMITTANCE
         self.EffRefrInd = [] # f77: rnlf
@@ -427,7 +427,7 @@ class frt_model:
         self.TrunkRefl = [] # f77: rtrnk
         for i,tc_dict in enumerate(self.frtconf["TreeClasses"]):
             wf = tc_dict['WaxCorrectionFactor'] if 'WaxCorrectionFactor' in tc_dict.keys() else 1
-            self.EffRefrInd.append( wf*np.array(self.WaxRefrInd) )
+            self.EffRefrInd.append( wf*self.WaxRefrInd )
             self.EffRefrInd[-1][ np.nonzero( self.EffRefrInd[-1] < 1) ] = 1
             # setting WaxCorrectionFactor to 0 can thus be used to ignore specular reflectance
             #    (if WaxCorrectionFactor==1, refractive indices are equal and specular reflectance is 0)
@@ -438,13 +438,13 @@ class frt_model:
                 ((1 - self.EffRefrInd[-1])/(1 + self.EffRefrInd[-1]))**2 )
             self.BranchRefl.append( tc_dict['BranchRefl'] )
             self.TrunkRefl.append( tc_dict['TrunkRefl'] )
-        # convert all lists of spectra to np arrays
-        self.EffRefrInd = np.array( self.EffRefrInd )
-        self.LeafRefl = np.array( self.LeafRefl )
-        self.LeafReflLambert = np.array( self.LeafReflLambert )
-        self.LeafTrans = np.array( self.LeafTrans )
-        self.BranchRefl = np.array( self.BranchRefl )
-        self.TrunkRefl = np.array( self.TrunkRefl )
+        # convert all lists of spectra to numpy arrays
+        self.EffRefrInd = np.array( self.EffRefrInd, dtype=float )
+        self.LeafRefl = np.array( self.LeafRefl, dtype=float )
+        self.LeafReflLambert = np.array( self.LeafReflLambert, dtype=float )
+        self.LeafTrans = np.array( self.LeafTrans, dtype=float )
+        self.BranchRefl = np.array( self.BranchRefl, dtype=float )
+        self.TrunkRefl = np.array( self.TrunkRefl, dtype=float )
 
         for i in range(self.ncl):
             if 'Description' not in self.frtconf['TreeClasses'][i].keys():
@@ -489,11 +489,10 @@ class frt_model:
                     print("\ncorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]) )
 
                     # If we change Fisher's Grouping Index, we need to change also tree distribution parameter TDP
-                    GI = 1-CrownCover_i
-                    if GI==1:
-                        self.TreeClumping[i] = 1
+                    if self.FGI[i]==1:
+                        self.TreeClumping[i] = 1 #
                     else:
-                        self.TreeClumping[i] = (-np.log(GI)) / (1-GI)
+                        self.TreeClumping[i] = -np.log(self.FGI[i]) / (1-self.FGI[i])
                     #
                 #
             if self.ShootLength[i] <= 0:
