@@ -507,7 +507,11 @@ def pi11u(tgthx, zz12, htree, cellb, rcri):
         z0 = 0
     else:
         z0 = cellb/np.sqrt(rcri/(cellb*tgthx)**2 + 1)
-    rz = np.sqrt(cellb**2 - zx**2)*rcri/cellb
+    if (cellb**2 - zx**2) < 0: # XXX DEBUG. this if-clause should be removed once problem is clarified
+        print("XXX ERROR in pi11u, (cellb**2 - zx**2) < 0 ")
+        print("XXX z12, hbase, htree, cellb, zx")
+        print(z12, hbase, htree, cellb, zx)
+    rz = np.sqrt(cellb**2 - zx**2)*rcri/cellb # WWW this line can throw an exception
     if ( np.abs(zx) >= z0 ):
         if (zz12 > hcent):
             # võra ülemine ots
