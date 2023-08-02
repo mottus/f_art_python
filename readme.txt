@@ -9,7 +9,7 @@ The following modifications have been made compared with the original version:
 * The input file format for the fortran version has been modified to allow 
   specification of the various spectra.
 * An optional normalization has been applied to balance te first-order and higher-order
-  scattering. See Mõttus, M., Stenberg, P. & Rautiainen, M. (2007), JGR – Atmospheres,
+  scattering. See MÃµttus, M., Stenberg, P. & Rautiainen, M. (2007), JGR â€“ Atmospheres,
   doi:10.1029/2006JD007445 for details.
 * The option to compute albedo, or flux reflectance, has been added: hence the name
   f-art.
@@ -45,23 +45,18 @@ Some spectral files are given here for demonstration only. The origin of the dat
 specifed in the files. Look up the original data for more spectra and information on
 how they can be used.
 
-Matti Mõttus (matti.mottus@gmail.com)
+Matti MÃµttus (matti.mottus@gmail.com)
 
-Excerpt from original FRT (pure fortran) readme.txt follows:
+information and acknowledgement from the original FRT (pure fortran):
 ----------------------------------------------------------------------
 Instructions and comments on the program frt
 
 Andres Kuusk
 Tartu Observatory
-61602 Tõravere, Estonia
-andres@aai.ee
-www.aai.ee/~andres/
-www.aai/bgf/
-
-
-10 October 2002,
-updated 29 July 2009,
-updated 11 December 2012
+61602 TÃµravere, Estonia
+andres@to.ee
+http://scorpion.to.ee/~andres/
+https://scorpion.to.ee//bgf/
 ______________________________________________________________________
 
 
@@ -76,13 +71,7 @@ GNU Fortran (SUSE Linux) 4.5.1 [gcc-4_5-branch revision 167585].
 If you don't use the gfortran compiler then 
 you have to modify the makefile.
 
-The manual is available on-line:
-
-http://www.aai.ee/
--> Structure and research projects
--> Remote sensing of vegetation
--> Projects
--> Forest reflectance model FRT 
+The manual is available in the docs folder: frtman0902.pdf
 
 Some details about the algorithms used may be found in the papers
 Nilson, T. and Peterson, U., 1991. A forest canopy reflectance model
