@@ -9,7 +9,6 @@ def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, db
 
     Tõenäosuste arvutamine               A. Kuusk   1.12.2000
         Modified by Matti Mõttus (2020). Basically, a wrapper around spooi.
-        spooi is (currently?) implemented in fortran77 and imported as library
 
     hetk8sA() in fortran code with reordered input parameters
     Args: except theta_vec, all arrays of the same length (one value for tree class)
@@ -738,6 +737,8 @@ def bck3(lelli, icl, ul, shl, stdns, htr, dbh, hc1, hc2, rcr,
     aell   = rcr[icl]
     htree  = htr[icl]
     shli   = shl[icl]
+    # compute distance from the point to crown surface for 3 directions:
+    #  observer up, sun, observer down
     if lellib:
         cell   = 0.5*vhelko
         rllvu = rlips(xi, yj, zk, sthetv, cthetv, sphi, cphi, aell, cell)
@@ -782,12 +783,16 @@ def bck3(lelli, icl, ul, shl, stdns, htr, dbh, hc1, hc2, rcr,
     #  To~ena"osuste pooi arvutamine.  (A. Jo~eveer)
     #  Vaba vaatesuuna tõenäosused väljaspool võra korraga päikese suunas
     #  ja vaatesuunas nii üles kui alla, pooui ja poodi, vastavalt.
+    #  Bidirectional gap probabilities outside the crown: in (sun, observer) directions
+    #    for observer in upper (pooui) and lower (poodi) hemisphere (up and down directions, respectively)
+    #  translate the coordinates given relative to crown center into absolute
+    #    coordinates and compute the three exit points from crowns (1: observer up, 2: sun, 3: observer down)
 
     x1  = xi + rllvu*sthetv*cphi
     y1  = yj + rllvu*sthetv*sphi
     z1  = zk + rllvu*cthetv + htree - cell
     #                htree - puu ko~rgus,
-    #                (htree - cell) - võra koordinaadistiku alguspunkt
+    #                (htree - cell) - võra koordinaadistiku alguspunkt / location of crown center
     x2  = xi + rlls*sthets
     y2  = yj
     z2  = zk + rlls*cthets + htree - cell

@@ -72,7 +72,7 @@ class frt_model:
                         +"File not found in frtconf. Aborting." )
                     return
                 else: # read data from file and interpolate
-                    fname = os.path.join( frt_datadir,self.frtconf[ key+'File' ] )
+                    fname = os.path.join( self.frt_datadir, self.frtconf[ key+'File' ] )
                     print("reading "+fname)
                     Q = np.genfromtxt( fname )
                     wl_Q = Q[:,0]
@@ -90,7 +90,7 @@ class frt_model:
                             +"File for TreeClass " +int(i)+" not found in frtconf. Aborting." )
                         return
                     else: # read data from file and interpolate
-                        fname = os.path.join( frt_datadir,tc[ key+'File' ] )
+                        fname = os.path.join( self.frt_datadir,tc[ key+'File' ] )
                         print("reading "+fname)
                         Q = np.genfromtxt( fname )
                         wl_Q = Q[:,0]
@@ -114,7 +114,7 @@ class frt_model:
                 #
             # Finally, the fully optional (and not documented?) leaf abaxial reflectance as a separate file
             if 'LeafRefl2File' in tc.keys():
-                fname = os.path.join( frt_datadir,tc['LeafRefl2File'] )
+                fname = os.path.join( self.frt_datadir,tc['LeafRefl2File'] )
                 print("reading "+fname)
                 Q = np.genfromtxt( fname )
                 wl_Q = Q[:,0]
@@ -326,29 +326,78 @@ class frt_model:
         # the nontrivial task is finding all the types json is not digesting and
         #    (numpy arrays, intc, bool_, ...) and converting them.
         # I know there are json encoders, but simpler is better.
-        fc = deepcopy( self.frtconf ) # make a copy for local editing
-        for i in fc.keys():
-            if isinstance( fc[i], np.ndarray):
-                fc[i] = fc[i][self.i1:self.i2+1].tolist()
-            if isinstance( fc[i], np.intc ):
-                fc[i] = int( fc[i] )
-        # next, go into treeclasses
-        for tc in fc['TreeClasses']:
-            for i in tc.keys():
-                if isinstance( tc[i], np.ndarray):
-                    tc[i] = tc[i][self.i1:self.i2+1].tolist()
-                if isinstance( tc[i], np.bool_ ):
-                    tc[i] = bool( tc[i] )
-                if isinstance( tc[i], np.intc ):
-                    tc[i] = int( tc[i] )
-        if filename is not None:
-            fn = os.path.join( self.frt_datadir, filename)
-            of = open( fn, "w" )
-            json.dump( fc, of, indent=indent )
-            of.close()
-            print("saved configuration to file "+fn)
-        return json.dumps(fc, indent = indent )
 
+        if self.frtconf_isread:
+            fc = deepcopy( self.frtconf ) # make a copy for local editing
+            i1 = fc['i1']
+            i2 = fc['i2']
+            for i in fc.keys():
+                if isinstance( fc[i], np.ndarray):
+                    fc[i] = fc[i][i1:i2+1].tolist()
+                if isinstance( fc[i], np.intc ):
+                    fc[i] = int( fc[i] )
+            # next, go into treeclasses
+            for tc in fc['TreeClasses']:
+                for i in tc.keys():
+                    if isinstance( tc[i], np.ndarray):
+                        tc[i] = tc[i][i1:i2+1].tolist()
+                    if isinstance( tc[i], np.bool_ ):
+                        tc[i] = bool( tc[i] )
+                    if isinstance( tc[i], np.intc ):
+                        tc[i] = int( tc[i] )
+            if filename is not None:
+                fn = os.path.join( self.frt_datadir, filename)
+                of = open( fn, "w" )
+                json.dump( fc, of, indent=indent )
+                of.close()
+                print("saved configuration to file "+fn)
+            return json.dumps(fc, indent = indent )
+        else:
+            print("FRT config not presebt, nothing to convert to json!")
+            return None
+
+    def conf2pickle( self, picklefile, absolutepath=False ):
+        """ save the frt configuration dict in a binary pickle file.
+        Default location of the file is in frt_datadir
+
+        Args:
+        picklefile: name of the file for pickled configuration
+        absolutepath: if True, do not save in frt_datadir, assume picklefile is absolute
+        """
+        if self.frtconf_isread:
+            import pickle
+            if not absolutepath:
+                picklefile = os.path.join( self.frt_datadir, picklefile )
+            f = open(picklefile,'wb')
+            pickle.dump(self.frtconf,f)
+            f.close()
+            print( "Saved configuration to "+picklefile )
+        else:
+            print("FRT config not present, nothing to pickle!")
+
+
+    def load_pickle( self, picklefile, frt_datadir=None ):
+        """ load the frt configuration dict from a binary pickle file.
+        NOTE: the pickle file should be the one which has been already loaded by frt,
+        i.e., with interpolated data and no references to external files! No external
+        files will be used for optical properties etc.
+
+        Args:
+        picklefile: name of the file for pickled configuration
+        frt_datadir (optional): if given, set frt_datadir -- and look here for picklefile, too
+        """
+        import pickle
+
+        if frt_datadir is not None:
+            self.frt_datadir = frt_datadir
+        # first, search for picklefile in the datadir (i.e., assume it's not absolute name)
+        if os.path.isfile( os.path.join(self.frt_datadir,picklefile) ):
+            picklefile = os.path.join(self.frt_datadir,picklefile)
+        self.frtconf = pickle.load( open( picklefile, "rb") )
+
+        self.frtconf_isread = True
+        self.configuration_applied = False # the data from the dict needs to be copied into class variables
+        self.frt_configured = False # new configutration read, indicate that preparatory computations are not done
 
     def apply_config( self ):
         """copy data from conf dictionary into object
