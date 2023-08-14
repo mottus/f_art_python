@@ -44,6 +44,7 @@ class frt_model:
             'CrownRadius', 'DBH', 'DryLeafWeight', 'SLW', 'BAILAI', 'TreeClumping', 'ShootClumping',
             'ShootLength' ]
         self.correctFGI = True # whether to correct for the unrealistic case of canopy cover  > crown cover
+        self.correctcrownlength = True # whether to correct for unrealisticly long cronws
 
     def load_conf( self, frtconf, frt_datadir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
@@ -448,6 +449,19 @@ class frt_model:
         self.TreeHeight = self.getarray('TreeHeight').astype(float)
         self.CrownLength1 = self.getarray('CrownLength1').astype(float)
         self.CrownLength2 = self.getarray('CrownLength2').astype(float)
+        if self.correctcrownlength:
+            # Crown length should not exceed tree height. Consider the latter a
+            #   more reliable parameter and adjust crown length
+            # No error is created for efficiency
+            if self.l_elli:
+                self.CrownLength1 = min(self.CrownLength1,self.TreeHeight)
+            else:
+                CL = self.CrownLength1+self.CrownLength2
+                if CL > self.TreeHeight:
+                    cf = self.TreeHeight/CL
+                    self.CrownLength1 *= cf
+                    self.CrownLength2 *= cf
+
         self.CrownRadius = self.getarray('CrownRadius').astype(float)
         self.DBH = self.getarray('DBH').astype(float)/100 # NB! convert from cm to m
         self.TreeClumping = self.getarray('TreeClumping').astype(float)
