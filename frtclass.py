@@ -452,15 +452,17 @@ class frt_model:
         if self.correctcrownlength:
             # Crown length should not exceed tree height. Consider the latter a
             #   more reliable parameter and adjust crown length
-            # No error is created for efficiency
-            if self.l_elli:
-                self.CrownLength1 = min(self.CrownLength1,self.TreeHeight)
-            else:
-                CL = self.CrownLength1+self.CrownLength2
-                if CL > self.TreeHeight:
-                    cf = self.TreeHeight/CL
-                    self.CrownLength1 *= cf
-                    self.CrownLength2 *= cf
+            for i_cl, l_cl in enumerate(self.l_elli):
+                # No error is created for efficiency
+                if l_cl:
+                    self.CrownLength1[i_cl] = min(self.CrownLength1[i_cl],self.TreeHeight[i_cl])
+                else:
+                    # shrink proportionally both crown parts, cone and cylinder
+                    CL = self.CrownLength1[i_cl] + self.CrownLength2[i_cl]
+                    if CL > self.TreeHeight[i_cl]:
+                        cf = self.TreeHeight[i_cl]/CL
+                        self.CrownLength1[i_cl] *= cf
+                        self.CrownLength2[i_cl] *= cf
 
         self.CrownRadius = self.getarray('CrownRadius').astype(float)
         self.DBH = self.getarray('DBH').astype(float)/100 # NB! convert from cm to m
