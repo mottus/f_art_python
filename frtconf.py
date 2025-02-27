@@ -30,7 +30,7 @@ frtconf['i1'] = 1 # Optional: the the beginning of subset (first index) of the w
 frtconf['i2'] = len(frtconf['wl']) # optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to len(wl)
 
 
-# ---- parameters quantifying the fores stand
+# ---- parameters quantifying the forest stand
 frtconf['Description'] = "plot_813030"          # optional, not used in computations
 frtconf['Age'] =  35                   # optional, not used in computations
 
