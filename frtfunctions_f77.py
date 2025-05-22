@@ -2,7 +2,7 @@
 #      versions which use modules written in f77
 #      either this or the corresponding frtfunctions_py  needs to be imported by frt
 #  f77 modules need to be compiled with f2py and require a fortran 90 compiler (e.g., gortran)
-#  sample commands for windows are given within each modue, but they depend on the specific fortran installation, e.g.,
+#  sample commands for windows are given within each module, but they depend on the specific fortran installation, e.g.,
 #    f2py.exe -c --compiler=mingw32 -m pi11d pi11d.f
 #  alternatively, fortran can be compiled from within python:
 #  numpy.f2py.compile(source, modulename='untitled', extra_args='', verbose=True, source_fn=None, extension='.f')

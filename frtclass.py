@@ -44,7 +44,7 @@ class frt_model:
             'CrownRadius', 'DBH', 'DryLeafWeight', 'SLW', 'BAILAI', 'TreeClumping', 'ShootClumping',
             'ShootLength' ]
         self.correctFGI = True # whether to correct for the unrealistic case of canopy cover  > crown cover
-        self.correctcrownlength = True # whether to correct for unrealisticly long cronws
+        self.correctcrownlength = True # whether to correct for unrealisticly long crowns
 
     def load_conf( self, frtconf, frt_datadir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
@@ -869,56 +869,6 @@ class frt_model:
             for t in self.frtconf["TreeClasses"]] )
 
 
-    def strmean_f77( self ):
-        """ wrapper for the original fortran77 strmean. OBSOLETE. DO NOT USE
-        Fills the same variables as strmean(), but appends 'F' to each name"""
-        import strmean
-        strmean.pidr.pi = np.pi
-        strmean.pidr.dr = np.pi/180
-        import enel3 # enel3 gives access to /frtpar/
-        enel3.enel_incl()
-
-        # f2py requires input arrays to be of exactly correct shape
-        nclmax = enel3.frtpar.fnclmax[()]
-        l_elli_F = np.empty(nclmax, dtype=bool)
-        shl_F = np.F(nclmax)
-        stdns_F = np.empty(nclmax)
-        htr_F = np.empty(nclmax)
-        hc1_F = np.empty(nclmax)
-        hc2_F = np.empty(nclmax)
-        rcr_F = np.empty(nclmax)
-        dbh_F = np.empty(nclmax)
-        rmass_F = np.empty(nclmax)
-        slwcl_F = np.empty(nclmax)
-        rlai_F = np.empty(nclmax)
-        rbai_F = np.empty(nclmax)
-        clmpst_F = np.empty(nclmax)
-        clmpsh_F = np.empty(nclmax)
-        glmp_F = np.empty(nclmax)
-
-        ncl = len(self.l_elli)
-        l_elli_F[0:ncl] = self.l_elli
-        shl_F[0:ncl] = self.ShootLength
-        stdns_F[0:ncl] = self.StandDensity
-        htr_F[0:ncl] = self.TreeHeight
-        hc1_F[0:ncl] = self.CrownLength1
-        hc2_F[0:ncl] = self.CrownLength2
-        rcr_F[0:ncl] = self.CrownRadius
-        dbh_F[0:ncl] = self.DBH
-        rmass_F[0:ncl] = self.DryLeafWeight
-        slwcl_F[0:ncl] = self.SLW
-        rlai_F[0:ncl] = self.LAI
-        rbai_F[0:ncl] = self.BAI
-        clmpst_F[0:ncl] = self.TreeClumping
-        clmpsh_F[0:ncl] = self.ShootClumping
-        glmp_F[0:ncl] = self.FGI
-
-        self.ulgF, self.uuuF, self.OpticalLAIF, self.StandTreeDensityF, self.MeanTreeHeightF, self.MeanCrownLengthEllipsoidF, self.MeanLengthCylinderF, \
-            self.MeanCrownRadiusF, self.MeanDBHF, self.MeanLeafMassF, self.MeanSLWF, self.CrownCoverF, self.CanopyCoverF, self.TrunkAreaBelowCrownF, \
-            self.StandEffectiveLAIF, self.StandLAIF, self.StandBAIF = strmean.strmean( l_elli_F, ncl,
-            stdns_F, htr_F, hc1_F, hc2_F, rcr_F, dbh_F, rmass_F, slwcl_F, rlai_F, rbai_F, clmpst_F, clmpsh_F, glmp_F)
-        self.EffectivePAIF  = ( self.StandEffectiveLAIF + sum(self.BAI) + self.TrunkAreaBelowCrownF ) # total effective PAI, leaves + branches + stems
-
     def strmean( self ):
         """ Calculate the mean values of structure parameters across tree classes
 
@@ -1045,6 +995,56 @@ class frt_model:
         return # =========================== strmean
     #
 
+    def strmean_f77( self ):
+        """ wrapper for the original fortran77 strmean. OBSOLETE. DO NOT USE
+        Fills the same variables as strmean(), but appends 'F' to each name"""
+        import strmean
+        strmean.pidr.pi = np.pi
+        strmean.pidr.dr = np.pi/180
+        import enel3 # enel3 gives access to /frtpar/
+        enel3.enel_incl()
+
+        # f2py requires input arrays to be of exactly correct shape
+        nclmax = enel3.frtpar.fnclmax[()]
+        l_elli_F = np.empty(nclmax, dtype=bool)
+        shl_F = np.F(nclmax)
+        stdns_F = np.empty(nclmax)
+        htr_F = np.empty(nclmax)
+        hc1_F = np.empty(nclmax)
+        hc2_F = np.empty(nclmax)
+        rcr_F = np.empty(nclmax)
+        dbh_F = np.empty(nclmax)
+        rmass_F = np.empty(nclmax)
+        slwcl_F = np.empty(nclmax)
+        rlai_F = np.empty(nclmax)
+        rbai_F = np.empty(nclmax)
+        clmpst_F = np.empty(nclmax)
+        clmpsh_F = np.empty(nclmax)
+        glmp_F = np.empty(nclmax)
+
+        ncl = len(self.l_elli)
+        l_elli_F[0:ncl] = self.l_elli
+        shl_F[0:ncl] = self.ShootLength
+        stdns_F[0:ncl] = self.StandDensity
+        htr_F[0:ncl] = self.TreeHeight
+        hc1_F[0:ncl] = self.CrownLength1
+        hc2_F[0:ncl] = self.CrownLength2
+        rcr_F[0:ncl] = self.CrownRadius
+        dbh_F[0:ncl] = self.DBH
+        rmass_F[0:ncl] = self.DryLeafWeight
+        slwcl_F[0:ncl] = self.SLW
+        rlai_F[0:ncl] = self.LAI
+        rbai_F[0:ncl] = self.BAI
+        clmpst_F[0:ncl] = self.TreeClumping
+        clmpsh_F[0:ncl] = self.ShootClumping
+        glmp_F[0:ncl] = self.FGI
+
+        self.ulgF, self.uuuF, self.OpticalLAIF, self.StandTreeDensityF, self.MeanTreeHeightF, self.MeanCrownLengthEllipsoidF, self.MeanLengthCylinderF, \
+            self.MeanCrownRadiusF, self.MeanDBHF, self.MeanLeafMassF, self.MeanSLWF, self.CrownCoverF, self.CanopyCoverF, self.TrunkAreaBelowCrownF, \
+            self.StandEffectiveLAIF, self.StandLAIF, self.StandBAIF = strmean.strmean( l_elli_F, ncl,
+            stdns_F, htr_F, hc1_F, hc2_F, rcr_F, dbh_F, rmass_F, slwcl_F, rlai_F, rbai_F, clmpst_F, clmpsh_F, glmp_F)
+        self.EffectivePAIF  = ( self.StandEffectiveLAIF + sum(self.BAI) + self.TrunkAreaBelowCrownF ) # total effective PAI, leaves + branches + stems
+        # ===================== strmean_f77
 
     def optmean( self ):
         """the mean values of optical parameters    A. Kuusk 23.09.1995

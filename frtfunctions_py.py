@@ -4,13 +4,13 @@
 import numpy as np
 from frtfunctions import *
 
-def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, glmp, ulg):
+def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, FGI, ulg):
     """ Calculation of unidirectional upward gap probabilities in crown layer
 
     Tõenäosuste arvutamine               A. Kuusk   1.12.2000
         Modified by Matti Mõttus (2020). Basically, a wrapper around spooi.
 
-    hetk8sA() in fortran code with reordered input parameters
+    rewrite of hetk8sA() fortran code with reordered input parameters
     Args: except theta_vec, all arrays of the same length (one value for tree class)
     theta_vec: np.ndarray of zenith angles
     l_elli: whether crown shape is ellipsoid (logical)
@@ -21,7 +21,7 @@ def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, db
     hc2: crown length, cylinder [m]
     rcr: crown radius [m]
     dbh: trunk diameter at brest height [m]
-    glmp: Fischer's grouping index
+    FGI: Fischer's grouping index
     ulg: uuu / 2 (=uuu*G?)???, uuu: effective plant area density (leaves corrected for clumping + branches)
 
     Returns:
@@ -53,7 +53,7 @@ def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, db
 
         #   calculate aas: gap probability, Sun direction
         aasi, poodi = spooi( l_elli, ulg, shl, stdns, htr,
-            hc1, hc2, rcr, dbh, glmp,
+            hc1, hc2, rcr, dbh, FGI,
             x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
             stheta, ctheta, stheta, ctheta, sphi2, cphi2, calph, chs1, chs3)
         gaps[i] = aasi
@@ -63,7 +63,7 @@ def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, db
 
 
 def hetk8s_bidirectional(thetv_vec, phi_vec, thets, nzs,
-    l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, glmp, ulg):
+    l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, FGI, ulg):
     """ Calculation of bidirectional (view, sun) gap probabilities in crown layer.
 
     Based on Fortran77 code Tõenäosuste arvutamine, A. Kuusk 1.12.2000
@@ -83,7 +83,7 @@ def hetk8s_bidirectional(thetv_vec, phi_vec, thets, nzs,
     hc2: crown length, cylinder [m] (vector of length ncl)
     rcr: crown radius [m] (vector of length ncl)
     dbh: trunk diameter at brest height [m] (vector of length ncl)
-    glmp: Fischer's grouping index (vector of length ncl)
+    FGI: Fischer's grouping index (vector of length ncl)
     ulg: uuu / 2 (=uuu*G?)???,  uuu: effective plant area density (leaves corrected for clumping + branches) (vector of length ncl)
 
     Returns:
@@ -110,7 +110,7 @@ def hetk8s_bidirectional(thetv_vec, phi_vec, thets, nzs,
             # calph=cos(alpha), alpha is the angle between Sun & view directions
 
             pooui, poodi = spooi(l_elli, ulg, shl, stdns,
-                htr, hc1, hc2, rcr, dbh, glmp,
+                htr, hc1, hc2, rcr, dbh, FGI,
                 x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
                 stheta1, ctheta1, stheta2, ctheta2, sphi, cphi, calph, chs1, chs3)
 
@@ -121,7 +121,7 @@ def hetk8s_bidirectional(thetv_vec, phi_vec, thets, nzs,
 
 
 def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
-    l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, glmp, ulg, uuu):
+    l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, FGI, ulg, uuu):
     """ Calculation of the bidirectional gap probabilities integrated over the crowns.
 
     Based on Fortran77 subroutine enel (from  enel3.f) modified to include the
@@ -155,7 +155,7 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
     hc2: crown length, cylinder [m] (vector of length ncl)
     rcr: crown radius [m] (vector of length ncl)
     dbh: trunk diameter at brest height [m] (vector of length ncl)
-    glmp: Fischer's grouping index (vector of length ncl)
+    FGI: Fischer's grouping index (vector of length ncl)
     ulg: uuu / 2 (=uuu*G?)??? (vector of length ncl)
     uuu: effective plant area density (leaves corrected for clumping + branches) (vector of length ncl)
 
@@ -211,7 +211,7 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
                         ztsti = zetst[itst]*cell
                         atsti = aetst[itst]*a2*cell
                         sxui, sxdi = bck3(l_elli, icl, ul, shl, stdns, htr, dbh,
-                            hc1, hc2, rcr, ulg, glmp, sthets, cthets, sthetv, cthetv,
+                            hc1, hc2, rcr, ulg, FGI, sthets, cthets, sthetv, cthetv,
                             sphi, cphi, calph, xtsti, ytsti, ztsti)
                         sumu = sumu + sxui*atsti
                         sumd = sumd + sxdi*atsti
@@ -231,7 +231,7 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
                                 ytsti = yctst[jtst]*rcirc
                                 atsti = actst[jtst]*rcirc**2
                                 sxui, sxdi = bck3(l_elli, icl, ul, shl, stdns, htr, dbh,
-                                    hc1, hc2, rcr, ulg, glmp, sthets, cthets, sthetv, cthetv,
+                                    hc1, hc2, rcr, ulg, FGI, sthets, cthets, sthetv, cthetv,
                                     sphi, cphi, calph, xtsti, ytsti, ztsti)
                                 sxyu = sxyu + sxui*atsti
                                 sxyd = sxyd + sxdi*atsti
@@ -249,7 +249,7 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
                                 ytsti = yctst[jtst]*rcirc
                                 atsti = actst[jtst]*rcirc**2
                                 sxui, sxdi = bck3(l_elli, icl, ul, shl, stdns, htr, dbh,
-                                    hc1, hc2, rcr, ulg, glmp, sthets, cthets, sthetv, cthetv,
+                                    hc1, hc2, rcr, ulg, FGI, sthets, cthets, sthetv, cthetv,
                                     sphi, cphi, calph, xtsti, ytsti, ztsti)
                                 sxyu = sxyu + sxui*atsti
                                 sxyd = sxyd + sxdi*atsti
@@ -318,7 +318,7 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
                             z2   = zk
                             z3   = zk
                             pooui, poodi = spooi(l_elli, ulg, shl, stdns,
-                                htr, hc1, hc2, rcr, dbh, glmp,
+                                htr, hc1, hc2, rcr, dbh, FGI,
                                 xi, yj, zk, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
                                 sthets, cthets, sthetv, cthetv, sphi, cphi, calph, chs1, chs3)
                             if (k==1) or (k==nz+1):
@@ -336,7 +336,7 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
                             z2   = zk
                             z3   = zk
                             pooui, poodi = spooi(l_elli, ulg, shl, stdns,
-                                htr, hc1, hc2, rcr, dbh, glmp,
+                                htr, hc1, hc2, rcr, dbh, FGI,
                                 xi, yj, zk, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
                                 sthets, cthets, sthetv, cthetv, sphi, cphi, calph, chs1, chs3)
                             if (k==1) or (k==nz+1):
@@ -357,14 +357,14 @@ def hetk8s_integrated(thetv_vec, phi_vec, thets, nzs,
 
 
 def spooi( lelli, ulg, shl, stdns, htr, hc1, hc2, rcr, dbh,
-    glmp, x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
+    FGI, x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
     sthets, cthets, sthetv, cthetv, sphi, cphi, calph, chs1, chs3 ):
     """ bidirectional probability of between-crown gaps
          (calculated using Eq. (5) in manual ver. 05.2005)
 
       subroutine spooi
      & (lelli, ncl, ulg, shl, stdns, htr, hc1, hc2, rcr, dbh,
-     & glmp, x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
+     & FGI, x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls1, rllv1, rllv3,
      & sthets, cthets, sthetv, cthetv, sphi, cphi, calph, chs1, chs3,
      & pooui, poodi)
 
@@ -483,7 +483,7 @@ def spooi( lelli, ulg, shl, stdns, htr, hc1, hc2, rcr, dbh,
         # sty3  = slty3*dbi
         #                              pooi üles binoomvalemiga, 28.05.1998
         #                                  esimene kordaja
-        vaheg   = 1 - glmp[i_n]
+        vaheg   = 1 - FGI[i_n]
         if abs(vaheg) > eps1:
             b11i = -np.log(1 - (1 -azvu)*vaheg)/vaheg
             # coefficient b1j in Eq. (7) of manual (ver. 05.2005)
@@ -704,7 +704,7 @@ def spooi( lelli, ulg, shl, stdns, htr, hc1, hc2, rcr, dbh,
 
 
 def bck3(lelli, icl, ul, shl, stdns, htr, dbh, hc1, hc2, rcr,
-    ulg, glmp, sthets, cthets, sthetv, cthetv, sphi,
+    ulg, FGI, sthets, cthets, sthetv, cthetv, sphi,
     cphi, calph, xi, yj, zk):
     """Bidirectional gap probability in a tree crown for the spherical orientation of leaves.
 
@@ -802,7 +802,7 @@ def bck3(lelli, icl, ul, shl, stdns, htr, dbh, hc1, hc2, rcr,
     z3  = zk - rllvd*cthetv + htree - cell
 
     pooui, poodi = spooi(lelli, ulg, shl, stdns, htr, hc1, hc2, rcr, dbh,
-        glmp, x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls, rllvu, rllvd,
+        FGI, x1, y1, z1, x2, y2, z2, x3, y3, z3, rlls, rllvu, rllvd,
         sthets, cthets, sthetv, cthetv, sphi, cphi, calph, chs1, chs3)
     sxui  = bgpu*pooui
     sxdi  = bgpd*poodi
