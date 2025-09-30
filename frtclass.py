@@ -12,8 +12,8 @@ from scipy.optimize import brentq
 from copy import deepcopy
 import json
 
-from frtfunctions import *
-from frtfunctions_py import *
+from .frtfunctions import *
+from .frtfunctions_py import *
 # to use the fortran77 bindings and libraries, use this instead of the above
 # from frtfunctions_f77 import *
 # NOTE! to use fortran modules, run first "make frt" in the source code directory
@@ -354,7 +354,7 @@ class frt_model:
                 print("saved configuration to file "+fn)
             return json.dumps(fc, indent = indent )
         else:
-            print("FRT config not presebt, nothing to convert to json!")
+            print("FRT config not present, nothing to convert to json!")
             return None
 
     def conf2pickle( self, picklefile, absolutepath=False ):
@@ -718,7 +718,7 @@ class frt_model:
         self.R1Q = self.R1_cQ + self.R1_gQ # total first-order reflectance component in quadrature directions
         self.T1Q = self.SQratio*bi0dQ #  1st order transmittance component
 
-        # the diffuse fluxes (w/o 1st order component) are independent from azimuth
+        # the diffuse fluxes (w/o 1st order component) are independent of azimuth
         #   so loop only over zenith angle
         self.rhd_hi_cQ = np.zeros( (self.nquad_t, self.nquad_p, self.nwl))
         self.rhd_hi_gQ = np.zeros( (self.nquad_t, self.nquad_p, self.nwl))
