@@ -352,7 +352,7 @@ def hetk8o( thets, thetv_vec, phi_vec, stdns, uuu, bdgfu, bdgfd, btr1uk, btr1dk,
     pkhair: correction to fresnel reflectance (?)
     RefrIndex: wax refractive index (for each tree class, f77 rnlf)
     TrunkRefl: trunk reflectance factor (for each tree class, f77 rtrnk)
-    LeafBranchReflLamb: leaf (+brance) Lambertian reflectance factor (for each tree class, f77 rrs)
+    LeafBranchReflLamb: leaf (+branch) Lambertian reflectance factor (for each tree class, f77 rrs)
     LeafBranchTrans: leaf transmittance factor (for each tree class, f77 ttt)
 
     Returns:

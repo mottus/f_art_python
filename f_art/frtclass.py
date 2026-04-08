@@ -37,7 +37,7 @@ class frt_model:
         if frt_srcdir is not None:
             if frt_srcdir not in sys.path:
                 sys.path.append(frt_srcdir)
-        self.frt_datadir = "."
+        self.frt_datadir = frt_datadir or "."
         # the required key lists below are not complete and do not guarantee a minimum set
         self.NeededConfKeys = ['TreeClasses', 'thetv', 'phiv', 'thets', 'wl']
         self.NeededClassKeys = ['l_elli', 'StandDensity', 'TreeHeight', 'CrownLength1',
@@ -45,6 +45,18 @@ class frt_model:
             'ShootLength' ]
         self.correctFGI = True # whether to correct for the unrealistic case of canopy cover  > crown cover
         self.correctcrownlength = True # whether to correct for unrealisticly long crowns
+        # check if we are given a configuraton and execute
+        # try to convert whatever we have into a dict and then load it
+        if type(frtconf) is str:
+            frtconf = json.loads(frtconf)
+        if type(frtconf) is not dict:
+            # last chance -- maybe we have a filename given?
+            if frtconffile is not None:
+                with open(frtconffile,'r') as f:
+                    jsonstring = f.read()
+                frtconf = json.loads(jsonstring)
+        if type(frtconf) is dict:
+            self.load_conf( frtconf )
 
     def load_conf( self, frtconf, frt_datadir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
@@ -314,12 +326,13 @@ class frt_model:
                 return self.frtconf[name]
         return defaultvalue
 
-    def conf2json( self, filename=None, indent=4 ):
+    def conf2json( self, filename=None, indent=4, absolutepath=False ):
         """ dump the configuration dict as json
 
         Args:
         If filename is given, json is stored there
         indent: json parameter
+        absolutepath: if false, self.frt_datadir is used
 
         Returns:
         string: json dump of self.frtconf
@@ -347,7 +360,10 @@ class frt_model:
                     if isinstance( tc[i], np.intc ):
                         tc[i] = int( tc[i] )
             if filename is not None:
-                fn = os.path.join( self.frt_datadir, filename)
+                if absolutepath:
+                    fn  = filename
+                else:
+                    fn = os.path.join( self.frt_datadir, filename)
                 of = open( fn, "w" )
                 json.dump( fc, of, indent=indent )
                 of.close()
@@ -421,6 +437,7 @@ class frt_model:
         self.nquad_p = self.load_optional_confparameter( "nquad_p", 7 )
         self.nquad_t = self.load_optional_confparameter( "nquad_t", 7 )
         self.correctFGI = self.load_optional_confparameter( "correctFGI", True )
+        self.oldFGI = -1 # initialize a non-physical value; will be set to the uncorrected value upon correction
         self.thetv = self.frtconf["thetv"]
         self.phiv = self.frtconf["phiv"]
         self.thets = self.frtconf["thets"]
@@ -546,7 +563,7 @@ class frt_model:
                 ErrorsFixed = True
             else:
                 # brentq imported from scipy.optimize as the most "generic" method suggested there
-                self.FGI.append ( brentq( CI_minfun, 0.0005, 7, args=self.TreeClumping[i] ) )
+                self.FGI.append( brentq( CI_minfun, 0.0005, 7, args=self.TreeClumping[i] ) )
             # ShootLength cannot be zero, use a minimum of 1 cm.
             if self.correctFGI:
                 # correct for the unrealistic case of canopy cover > crown cover by adjusting Fisher's index FGI
@@ -556,8 +573,9 @@ class frt_model:
                 # regular distribution, but because a limit has been reached, this would not decrease canopy transmittance.
                 CrownCover_i = np.pi*(self.StandDensity[i]*self.CrownRadius[i]**2)
                 if self.FGI[i] < (1-CrownCover_i):
+                    self.oldFGI = self.FGI[i]
                     self.FGI[i] = 1-CrownCover_i
-                    print("\nCorrected FGI of tree class {:d} to {:5.3f}".format(i,self.FGI[i]), end="" )
+                    print("\nCorrected FGI of tree class {:d} from {:5.3f} to {:5.3f}".format(i,self.oldFGI,self.FGI[i]), end="" )
                     ErrorsFixed = True
                     # If we change Fisher's Grouping Index, we need to change also tree distribution parameter TDP
                     if self.FGI[i]==1:
