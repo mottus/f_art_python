@@ -8,7 +8,7 @@
 #  numpy.f2py.compile(source, modulename='untitled', extra_args='', verbose=True, source_fn=None, extension='.f')
 
 import numpy as np
-from frtfunctions import *
+from f_art.frtfunctions import *
 # frt fortran77 modules:
 import spooi
 import enel3

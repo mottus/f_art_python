@@ -2,7 +2,7 @@
 #  pure python implementation
 #      either this or the corresponding frtfunctions_f77 needs to be imported by frt
 import numpy as np
-from frtfunctions import *
+from f_art.frtfunctions import *
 
 def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, dbh, FGI, ulg):
     """ Calculation of unidirectional upward gap probabilities in crown layer
@@ -28,7 +28,7 @@ def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, db
     gaps: gap probability (np.ndarray)
     """
 
-    ncl = len(l_elli )
+    # ncl = len(l_elli )
     gaps = np.zeros_like(theta_vec)
 
     # these should be the coordinates of rays entering and exiting the crown
@@ -828,7 +828,7 @@ def stem(z1, z2, dbh, htree):
     #  need parameetrid on männi jaoks
     #  parameters for Scots pine
     ati = [ 118.981, -277.578, 1140.525, -3037.487, 4419.682, -3361.78, 997.657 ]
-    ht0 = 26.0,
+    ht0 = 26.0
     dt0 = 30.0
     pty = 0.007
     qty = -0.007

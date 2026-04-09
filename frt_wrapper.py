@@ -20,18 +20,20 @@ import numpy as np
 import os
 import sys
 import copy
+from pathlib import Path
 
-configfilename = "infile_test.txt"
+configfilename = "in_frt_demo"
 oufile = "outfile_test.txt"
 
-# ftr_dir: the place where frt data and configuration files are
-# frt_dir = '/homeappl/home/mottusma/frt/f-art'
-frt_dir = "C:/data/koodid/f_art_test"
+# frt_dir: the place where frt data and configuration files are
+#   NOTE: the relevant data files must be copied to frt_dir for the script to work!
+current_dir = Path(__file__).resolve().parent
+frt_dir = str( current_dir )
 # frt_srcdir the place where the python and fortran modules are stored (and frt source code)
-frt_srcdir = "C:/data/koodid/f_art_devel/f-art"
+frt_srcdir = str( current_dir / 'f_art' )
 
-if not frt_dir in sys.path:
-    sys.path.append(frt_dir)
+
+# add frt_srcdir to sys.path for easier importing
 if not frt_srcdir in sys.path:
     sys.path.append(frt_srcdir)
 
@@ -41,6 +43,7 @@ os.chdir(frt_dir) # frt needs to be run from its data folder
 #  three separate subroutines are called by the main function: xd_cfm, corrfact, and comprt
 #    these are compiled and available as separate modules, although corrfact includes a full comprt
 from frt_wrapper_functions import *
+# 
 import xd_cfm
 import corrfact
 corrfact.pidr.pi = np.pi # pi and pidr are actually filled also in fortran code

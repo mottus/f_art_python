@@ -12,8 +12,8 @@ from scipy.optimize import brentq
 from copy import deepcopy
 import json
 
-from .frtfunctions import *
-from .frtfunctions_py import *
+from f_art.frtfunctions import *
+from f_art.frtfunctions_py import *
 # to use the fortran77 bindings and libraries, use this instead of the above
 # from frtfunctions_f77 import *
 # NOTE! to use fortran modules, run first "make frt" in the source code directory
@@ -27,7 +27,15 @@ from .frtfunctions_py import *
 
 class frt_model:
 
-    def __init__( self, frt_srcdir=None ):
+    def __init__( self, frt_srcdir=None, frt_datadir=None, frtconf=None, frtconffile=None ):
+        """ Create a FTR object. Leave it balnk and unconfigured, or load the conf given in the arguments.
+        
+        Args:
+        frt_srcdir: the source directory including the fortran DLLs, not required for python-only FRT.
+        frt_datadir: the directory for spectral data files. Defaults to "."
+        frtconf: configuration dictionary or json string with the configuration to be loaded
+        frtconffile: name of the configuration file in the to frt_datadir folder (used if frtconf not given)
+        """
         # frt_srcdir is needed to import the fortran modules
         self.frtconf = {}
         self.frtconf_isread = False
@@ -87,7 +95,9 @@ class frt_model:
                 else: # read data from file and interpolate
                     fname = os.path.join( self.frt_datadir, self.frtconf[ key+'File' ] )
                     print("reading "+fname)
-                    Q = np.genfromtxt( fname )
+                    # Q = np.genfromtxt( fname, encoding_errors='ignore' )
+                    with open( fname, 'rt', encoding='utf-8', errors='ignore' ) as f:
+                        Q = np.genfromtxt( f )
                     wl_Q = Q[:,0]
                     v_Q = Q[:,1]
                     self.frtconf[key] = np.interp( wl, wl_Q, v_Q )
@@ -105,7 +115,9 @@ class frt_model:
                     else: # read data from file and interpolate
                         fname = os.path.join( self.frt_datadir,tc[ key+'File' ] )
                         print("reading "+fname)
-                        Q = np.genfromtxt( fname )
+                        # Q = np.genfromtxt( fname, encoding_errors='ignore' )
+                        with open( fname, 'rt', encoding='utf-8', errors='ignore' ) as f:
+                            Q = np.genfromtxt( f )
                         wl_Q = Q[:,0]
                         v_Q = Q[:,1]
                         tc[key] = np.interp( wl, wl_Q, v_Q )
@@ -129,7 +141,9 @@ class frt_model:
             if 'LeafRefl2File' in tc.keys():
                 fname = os.path.join( self.frt_datadir,tc['LeafRefl2File'] )
                 print("reading "+fname)
-                Q = np.genfromtxt( fname )
+                # Q = np.genfromtxt( fname, encoding_errors='ignore' )
+                with open( fname, 'rt', encoding='utf-8', errors='ignore' ) as f:
+                    Q = np.genfromtxt( f )
                 wl_Q = Q[:,0]
                 v_Q = Q[:,1]
                 tc['LeafRefl2'] = np.interp( wl, wl_Q, v_Q )
@@ -165,14 +179,16 @@ class frt_model:
         self.frt_configured = False # new configutration read, indicate that preparatory computations are not done
 
     def read_conf( self, configfilename, frt_datadir=None ):
-        # read a FRT configuration file into the frtconf dictionary
-        #  currently, there is no python way to read the input file, only via the fortran module
+        """ read a fortran-era FRT configuration file into the frtconf dictionary
+        currently, there is no python way to read the input file, only via the fortran module
+        DO NOT USE THIS WITH THE FULL PYTHON VERSION - json files can be given to the constructor
+        """""
         if frt_datadir is not None:
             self.frt_datadir = frt_datadir
         # import python library
         import xd_cfm
         # import also the helpers to convert data from fortran
-        from frt_wrapper_functions import chararray2strarray
+        # from frt_wrapper_functions import chararray2strarray
         # xd_cfm needs to be run in the  folder where the data are
         os.chdir(self.frt_datadir)
 
@@ -830,8 +846,9 @@ class frt_model:
         #   but it's safer to use deepcopy.
         F2 = deepcopy( self )
         F2.EffRefrInd = np.ones_like( self.EffRefrInd ) # eliminate specular reflectance
-        # scale leaf reflectance and transmittance so that albedo -> 1. albedo=0 for which scaling doe not work
+        # scale leaf reflectance and transmittance so that albedo -> 1.
         w = self.LeafRefl + self.LeafTrans # leaf albedo
+        #  If albedo==0, the scaling will fail! set these to R=T=0.5
         i = np.nonzero( w == 0 )
         w[i] = 1
         reflfrac = self.LeafRefl / w # fraction of weighted reflectance to weighted total scattering, F = refl/(refl+tran)
@@ -854,7 +871,7 @@ class frt_model:
         F2.SQratio = np.ones_like( F2.SQratio )
         # set the i1 and i2 based on wlcorr
         if self.wlcorr < 0:
-            F2.i1 = round( self.wlcorr ) - 1 # switch to python numbering
+            F2.i1 = round( -self.wlcorr ) - 1 # switch to python numbering
             F2.i2 = F2.i1 # only one wavelength used
         elif self.wlcorr > 0:
             # find closest wavelength

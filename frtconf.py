@@ -20,12 +20,13 @@ frtconf['thets'] = 40*np.pi/180 # solar zenith angle [rad]
 frtconf['phiv'] = 0*np.pi/180 # relative view azimuth angle [rad]
 
 # frtconf['wl'] = np.arange( 400, 2400, 5 )
+frtconf['wl'] = [ 450, 480, 510, 540, 570 ]
+
 # The wavelength used in the model. They serve as labels. The length of wl vector sets the
 #   length requirement for all other input spectral vectors. For spectral data read from
 #   external files, the values will be interpolated to the values in wl
 frtconf['SQratio'] = np.ones_like( frtconf['wl'] )*1.0 # S/Q ratio: ratio of direct to total irradiance. Vector of the same length as wl
 
-frtconf['wl'] = [ 450, 480, 510, 540, 570 ]
 frtconf['i1'] = 1 # Optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to 1. Note: indexing starts from 1 (human, not python style)
 frtconf['i2'] = len(frtconf['wl']) # optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to len(wl)
 

@@ -2001,4 +2001,3 @@
 2400.0	0.2762
 #wlngth(nm)	reflectance
 # pine trunk, GER-2600, July 2001, Estonia
-# männi tüvi, GER-2600, juuli 2001
