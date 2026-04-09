@@ -109,8 +109,9 @@ class frt_model:
             outstr = outstr + f"Canopy cover: {self.CanopyCover:.2f}\n"
             outstr = outstr + f"Crown cover: {self.CrownCover:.2f}\n"
             outstr = outstr + f"Branch Area Index (BAI): {self.StandBAI:.2f}\n"
-            outstr = outstr + f"Effective Plant Area Index (PAI ~5-ring LAI-2000): {self.StandEffectivePAI:.2f}"
-            outstr = outstr + f"Effective LAI for 2-stream model: {self.OpticalLAI:.2f}\n"
+            outstr = outstr + f"Shoot clumping-corrected Plant Area Index (PAI): {self.StandEffectivePAI:.2f}\n"
+            outstr = outstr + f"Effective LAI for 2-stream model: {self.effLAI:.2f}\n"
+            outstr = outstr + f"Optical (5-ring LAI-2000) PAI: {self.optPAI:.2f}\n"
         return outstr
          
 
@@ -211,8 +212,7 @@ class frt_model:
                     tc['LeafTrans'] = np.array( tc['LeafTrans'] )*(1-p)/(1-p*w)
                     if 'LeafRefl2' in tc.keys():
                         tc['LeafRefl2'] = np.array( tc['LeafRefl2'] )*(1-p)/(1-p*w)
-                    print("Scaled leaf R & T using p=", str(p)," for tree class ",
-                        str(i), end=" ")
+                    print(f"Scaled leaf R & T using p={p:.3f} for tree class {i:d}", end=" " )
                     if 'Description' in tc.keys():
                         print( tc['Description'] )
                     else:
@@ -656,7 +656,7 @@ class frt_model:
 
         # CALCULATE MEAN PARAMETERS FOR THE STAND (averaged over tree classes)
         self.strmean()
-        #  strmean() sets up self.ulg, self.uuu, self.OpticalLAI, self.StandTreeDensity, self.MeanTreeHeight, self.MeanCrownLengthEllipsoid,
+        #  strmean() sets up self.ulg, self.uuu, self.effLAI, self.StandTreeDensity, self.MeanTreeHeight, self.MeanCrownLengthEllipsoid,
         #    self.MeanLengthCylinder, self.MeanCrownRadius, self.MeanDBH, self.MeanLeafMass, self.MeanSLW, self.CrownCover,
         #    self.CanopyCover, self.TrunkAreaBelowCrown, self.StandEffectiveLAI, self.StandLAI, self.StandBAI
 
@@ -751,7 +751,7 @@ class frt_model:
         self.T1 = self.SQratio*self.bi0d #  1st order transmittance component
 
         self.rhd_hi_c, self.rhd_hi_g, self.thd_hi = twostr( self.thets, self.thetv, self.SQratio,
-            self.OpticalLAI, self.TrunkAreaBelowCrown, self.CorrectionFactor,
+            self.effLAI, self.TrunkAreaBelowCrown, self.CorrectionFactor,
             self.MeanRefl, self.MeanTrans, self.rDSground, self.rSDground, self.rDDground,
             self.gaps_s, self.gaps_v )
 
@@ -792,6 +792,7 @@ class frt_model:
         bi0uQ, bi0dQ =  hetk8o( self.thets, self.xquad_t, self.xquad_p,
             self.StandDensity, self.uuu, self.bdgfuQ, self.bdgfdQ, self.btr1ukQ, self.btr1dkQ, self.pkhair, self.EffRefrInd,
             self.TrunkRefl, self.LeafBranchReflLamb, self.LeafBranchTrans )
+        # multiple (ntheta x nphi) view angles (theta, phi) will be computed at once
         # bi0u: single scattering reflectance component (tree crowns); 3D ndarray (ntheta, nphi, nwl)
         # bi0d: single scattering transmittance component (tree crowns) 3D ndarray (ntheta, nphi, nwl)
 
@@ -807,7 +808,7 @@ class frt_model:
         self.thd_hiQ = np.zeros( (self.nquad_t, self.nquad_p, self.nwl))
         for i,(theta,gaps) in enumerate( zip(self.xquad_t,self.gaps_vvec) ):
             rhd_hi_c, rhd_hi_g, thd_hi = twostr(self.thets, theta, self.SQratio,
-                self.OpticalLAI, self.TrunkAreaBelowCrown, self.CorrectionFactor,
+                self.effLAI, self.TrunkAreaBelowCrown, self.CorrectionFactor,
                 self.MeanRefl, self.MeanTrans, self.rDSground, self.rSDground, self.rDDground,
                 self.gaps_s, gaps)
             self.rhd_hi_cQ[i,:,:] = rhd_hi_c
@@ -960,7 +961,7 @@ class frt_model:
         fills in the following variables in self:
         ulg: uuu / 2 ??? ul * G  (f77: uuu)
         uuu: effective plant area density (leaves corrected for clumping + branches) (f77: uuu)
-        OpticalLAI: LAI of a random canopy that causes extinction similar to that of the stand at thseff (= 40°) (f77: efflai)
+        effLAI: LAI of a random canopy that causes extinction similar to that of the stand at thseff (= 40°) (f77: efflai)
         StandTreeDensity: total number of trees per m^2  (f77: sntr)
         MeanTreeHeight: mean tree height (f77: hmtree)
         MeanCrownLengthEllipsoid: mean length of the ellipsoid or conical part of crown (f77: vhekm)
@@ -1072,7 +1073,7 @@ class frt_model:
             else:
                 b10i  = 1 - a1gr
             alsc  += self.StandDensity[i]*szu1*b10i
-        self.OpticalLAI =  cthets*alsc / gsf #  LAI of a random canopy that causes
+        self.effLAI =  cthets*alsc / gsf #  LAI of a random canopy that causes
         #                extinction similar to  that of the stand at thseff (= 40°)
         #  WWW  in the original version, the 2 (1/G) was missing
         return # =========================== strmean

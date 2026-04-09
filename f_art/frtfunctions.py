@@ -345,7 +345,8 @@ def hetk8o( thets, thetv_vec, phi_vec, stdns, uuu, bdgfu, bdgfd, btr1uk, btr1dk,
     Args:
     thets: solar zenith angle [rad]
     thetv_vec: vector of view zenith angles [rad], e.g. knots of G-L quadrature (zenith angle)
-    phi_vec: vector of relative view azimuth angles for the quadrature [rad]    thets: sun zenith angle [rad]
+    phi_vec: vector of relative view azimuth angles for the quadrature [rad]
+    thets: sun zenith angle [rad]
     stdns: stand density for each tree class
     uuu: leaf+branch area density for each tree class
     bdgfu, bdgfd, btr1uk, btr1dk: gap fractions integrated over the crowns of each class
