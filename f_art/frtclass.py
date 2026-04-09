@@ -55,6 +55,10 @@ class frt_model:
         self.correctcrownlength = True # whether to correct for unrealisticly long crowns
         # check if we are given a configuraton and execute
         # try to convert whatever we have into a dict and then load it
+        self.R = None
+        self.T = None
+        self.RF = None
+        self.TF = None
         if type(frtconf) is str:
             frtconf = json.loads(frtconf)
         if type(frtconf) is not dict:
@@ -65,6 +69,50 @@ class frt_model:
                 frtconf = json.loads(jsonstring)
         if type(frtconf) is dict:
             self.load_conf( frtconf )
+            
+    def __str__( self ):
+        """ The function to print the object in a meaningful manner
+        """
+        if len(self.frtconf) == 0:
+            outstr = "empty FRT forest object\n"
+        else:
+            n = len(self.frtconf['TreeClasses'])
+            outstr = "FRT forest object with " + str(n)+" classes, configuration "
+            if not self.configuration_applied:
+                outstr = outstr + "not "
+            outstr = outstr + "applied\n"
+            if n > 0:
+                
+                species = self.getarray('Description') # hopefully, species
+                outstr = outstr + "(" + ", ".join(species) + ")\n"
+                
+                density = self.getarray('StandDensity')*10000 # convert to trees/ha
+                outstr = outstr + "Stand density {:.1f}".format(sum(density))
+                outstr = outstr + ": (" + " + ".join(f"{x:.0f}" for x in density) + ") trees/ha\n"
+                
+                dbh = self.getarray('DBH') # dbh, in cm
+                ba = density * dbh**2 * np.pi / 40000 # basal area, m2/ha
+                outstr = outstr + "Basal area {:.2f}".format(sum(ba))
+                outstr = outstr + ": (" + " + ".join(f"{x:.2f}" for x in ba) + ") m2/ha\n"
+
+                height = self.getarray('TreeHeight') # dbh, in cm
+                outstr = outstr + "BA-weighted Tree height {:.1f}".format(sum( ba*height )/sum(ba))
+                outstr = outstr + ": (" + " , ".join(f"{x:.1f}" for x in height) + ") m\n"
+                
+                outstr = outstr + "LAI {:.2f}".format(sum( self.LAI ))
+                outstr = outstr + ": (" + " + ".join(f"{x:.2f}" for x in self.LAI) + ")\n"   
+
+        if not self.frt_configured:
+            outstr = outstr + "Not configured yet"
+        else:
+            outstr = outstr + f"DIFfuse Non-interceptance (DIFN): {self.DIFN:.2f}\n"
+            outstr = outstr + f"Canopy cover: {self.CanopyCover:.2f}\n"
+            outstr = outstr + f"Crown cover: {self.CrownCover:.2f}\n"
+            outstr = outstr + f"Branch Area Index (BAI): {self.StandBAI:.2f}\n"
+            outstr = outstr + f"Effective Plant Area Index (PAI ~5-ring LAI-2000): {self.StandEffectivePAI:.2f}"
+            outstr = outstr + f"Effective LAI for 2-stream model: {self.OpticalLAI:.2f}\n"
+        return outstr
+         
 
     def load_conf( self, frtconf, frt_datadir=None ):
         """ Load the external dict frtconf into frt and do some basic checks, load spectrum files
@@ -433,7 +481,7 @@ class frt_model:
         self.frt_configured = False # new configutration read, indicate that preparatory computations are not done
 
     def apply_config( self ):
-        """copy data from conf dictionary into object
+        """copy data from the self.frtconf dictionary into the various data fields in the object
         Call this after config data in a dictionary has been loaded
         """
         if not self.frtconf_isread:
