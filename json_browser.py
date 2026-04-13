@@ -6,7 +6,7 @@ created largely using claude
 """
 import numpy as np
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 import json
 import os
 import io
@@ -20,6 +20,8 @@ fig = None
 ax = None
 colorN = 0
 
+
+# ── runs when the Run FRT button is pressed ───────────────────────────────────
 
 def process(data):
     global fig, ax, colorN
@@ -60,6 +62,47 @@ def process(data):
     
     return printstring.getvalue()
 
+# Pure Claude code from here onwards
+
+# ── runs automatically every time a json file is loaded ──────────────────────
+def on_load(data):
+    """
+    Prints a summary table of tree classes.
+    """
+    import math
+ 
+    tree_classes = data.get("TreeClasses", [])
+    if not tree_classes:
+        return "No TreeClasses found."
+ 
+    W       = [28, 12, 10, 10, 16]
+    names   = ["Description",  "Density",  "DBH",    "Height",    "Basal area"]
+    units   = ["",             "(m⁻²)",    "(cm)",   "(m)",       "(m²/ha)"]
+    sep     = "  ".join("-" * w for w in W)
+    fmt_row = lambda vals: "  ".join(f"{v:<{w}}" for v, w in zip(vals, W))
+ 
+    lines = [fmt_row(names), fmt_row(units), sep]
+    for i, tc in enumerate(tree_classes):
+        desc    = str(tc.get("Description", i + 1))
+        density = tc.get("StandDensity", None)
+        dbh     = tc.get("DBH", None)
+        height  = tc.get("TreeHeight", None)
+ 
+        if density is not None and dbh is not None:
+            ba     = density * math.pi * (dbh / 200.0) ** 2 * 10000
+            ba_str = f"{ba:.1f}"
+        else:
+            ba_str = "N/A"
+ 
+        density_str = f"{density:.4f}" if density is not None else "N/A"
+        dbh_str     = f"{dbh:.1f}"     if dbh     is not None else "N/A"
+        height_str  = f"{height:.1f}"  if height  is not None else "N/A"
+ 
+        lines.append(fmt_row([desc, density_str, dbh_str, height_str, ba_str]))
+ 
+    return "\n".join(lines)
+ 
+ 
 # ── tree view helpers ─────────────────────────────────────────────────────────
 def populate_tree(tree, parent, key, value):
     """Recursively insert a JSON node. Leaf nodes store their data path as tags."""
@@ -210,10 +253,12 @@ def browse_folder():
  
  
 def load_files(folder):
+    if not folder or not os.path.isdir(folder):
+        return
     listbox.delete(0, tk.END)
     try:
         files = sorted(f for f in os.listdir(folder) if f.endswith(".json"))
-    except PermissionError:
+    except (PermissionError, FileNotFoundError):
         return
     for f in files:
         listbox.insert(tk.END, f)
@@ -236,8 +281,17 @@ def open_file(path):
         load_tree(current_data)
         output_text.delete("1.0", tk.END)
         current_path = path
+        folder_entry.config(text=os.path.dirname(path))
         status_var.set(f"Loaded: {os.path.basename(path)}")
         run_btn.config(state=tk.NORMAL)
+        try:
+            result = on_load(current_data)
+            if result:
+                output_text.delete("1.0", tk.END)
+                output_text.insert(tk.END, result)
+        except Exception as ex:
+            output_text.delete("1.0", tk.END)
+            output_text.insert(tk.END, f"on_load error:\n{ex}")
     except Exception as e:
         status_var.set(f"Error: {e}")
  
@@ -348,32 +402,38 @@ ttk.Scrollbar(tree_frame, orient=tk.VERTICAL,
  
 tree.bind("<Double-1>", on_tree_double_click)
  
-# right-click context menu for TreeClasses items
-tree_menu = tk.Menu(root, tearoff=0)
-tree_menu.add_command(label="Delete this tree class",
-                      command=lambda: delete_tree_class())
- 
- 
-def get_tree_class_index(item):
-    parent = tree.parent(item)
-    if not parent:
-        return None
-    if not tree.item(parent, "text").startswith("TreeClasses"):
-        return None
-    return list(tree.get_children(parent)).index(item)
+def get_tree_class_child(item):
+    """Walk up until we find a direct child of TreeClasses. Returns that item or None."""
+    current = item
+    while current:
+        parent = tree.parent(current)
+        if not parent:
+            return None
+        if tree.item(parent, "text").startswith("TreeClasses"):
+            return current
+        current = parent
+    return None
  
  
 def delete_tree_class():
-    sel = tree.selection()
-    if not sel:
+    item = tree_menu._target_item
+    if item is None:
         return
-    idx = get_tree_class_index(sel[0])
-    if idx is None:
+    child = get_tree_class_child(item)
+    if child is None:
         return
+    siblings = list(tree.get_children(tree.parent(child)))
+    idx = siblings.index(child)
     if messagebox.askyesno("Delete", f"Delete tree class {idx}?"):
         current_data["TreeClasses"].pop(idx)
         load_tree(current_data)
         status_var.set(f"Deleted tree class {idx}.")
+ 
+ 
+# right-click context menu — store target item on the menu object itself
+tree_menu = tk.Menu(root, tearoff=0)
+tree_menu._target_item = None
+tree_menu.add_command(label="Delete this tree class", command=delete_tree_class)
  
  
 def on_tree_right_click(event):
@@ -381,7 +441,8 @@ def on_tree_right_click(event):
     if not item:
         return
     tree.selection_set(item)
-    if get_tree_class_index(item) is not None:
+    if get_tree_class_child(item) is not None:
+        tree_menu._target_item = item
         tree_menu.tk_popup(event.x_root, event.y_root)
  
  
