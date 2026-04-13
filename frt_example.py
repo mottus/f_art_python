@@ -1,6 +1,7 @@
 from pathlib import Path
 from f_art.frtclass import frt_model
-
+import json
+import matplotlib.pyplot as plt
 
 current_dir = Path(__file__).resolve().parent
 
@@ -38,9 +39,32 @@ G2 = frt_model( frt_datadir=spectradir, frtconffile=frt_sampleconfigdir+'/a_test
 G2.reflectance()
 print(" See G2.R and G2.T")
 
+print("\n --- reading json file into a dictionary from "+frt_sampleconfigdir)
+with open(frt_sampleconfigdir+'/a_test.json','r') as f:
+    jsonstring = f.read()
+frtconf3 = json.loads(jsonstring)
+G3 = frt_model( frt_datadir=spectradir, frtconf=frtconf3 )
+G3.reflectance()
+print(" See G3.R and G3.T")
+
+# -- plot R, T
+fig3, ax3 = plt.subplots(figsize=(8, 4))
+ax3.plot(G3.wl, G3.R,  label='rflectance',  color='red', lw=1.5)
+ax3.plot(G3.wl, G3.T, label='transmittance', color='blue', lw=1.5, linestyle='--')
+
+ax3.set_xlabel('wavelength (nm)')
+ax3.set_ylabel('reflectance,transmittance')
+ax3.set_xlim(400, 1000)
+ax3.set_ylim(bottom=0)
+
+ax3.legend(frameon=False)
+fig3.tight_layout()
+plt.show()
+
 # OPTION B: use Fortran77 FRT "new" input file (text file)
 # this requires fortran and compiled frt rd_cfm.f, xd_cfm.f
 # H = frt_model( frt_srcdir ) # if fortran is used, frt_srcdir needs to be given
 # H.read_conf( os.path.join( current_dir, configfilename ), frt_datadir )
 # H.configure_frt()
 # H.reflectance()
+
