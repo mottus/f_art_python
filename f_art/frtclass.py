@@ -154,9 +154,9 @@ class frt_model:
                 else: # read data from file and interpolate
                     fname = os.path.join( self.frt_datadir, self.frtconf[ key+'File' ] )
                     print("reading "+fname)
-                    # Q = np.genfromtxt( fname, encoding_errors='ignore' )
-                    with open( fname, 'rt', encoding='utf-8', errors='ignore' ) as f:
-                        Q = np.genfromtxt( f )
+                    Q = read_textfile( fname )
+                    # with open( fname, 'rt', encoding='utf-8', errors='ignore' ) as f:
+                    #     Q = np.genfromtxt( f )
                     wl_Q = Q[:,0]
                     v_Q = Q[:,1]
                     self.frtconf[key] = np.interp( wl, wl_Q, v_Q )
@@ -465,8 +465,7 @@ class frt_model:
             print( "Saved configuration to "+picklefile )
         else:
             print("FRT config not present, nothing to pickle!")
-
-
+            
     def load_pickle( self, picklefile, frt_datadir=None ):
         """ load the frt configuration dict from a binary pickle file.
         NOTE: the pickle file should be the one which has been already loaded by frt,

@@ -1,8 +1,7 @@
 # helper functions used by the frt class
 #  these functions are not dependent on any specifics of frt and maybe useful elsewhere, too
 import numpy as np
-import os
-import sys
+import io
 
 def rintegr(xxx):
     return (1 - np.exp(-xxx))/xxx
@@ -963,3 +962,29 @@ def bgrdd(thets, thetv, skyl, efflai, tlty, rteff, tteff, rddgrou, rsdgrou):
             eint(ul*(vkv - vks))
     return bddif
 #   -------------------------- end bgrdd
+
+def read_textfile(filename, **kwargs):
+    """
+    Read a numeric text file with np.genfromtxt, automatically handling
+    any Unicode BOM (UTF-8, UTF-16 LE/BE, UTF-32) and passing all other
+    arguments straight through to genfromtxt.
+    """
+    with open(filename, "rb") as f:
+        raw = f.read()
+
+    # detect and strip BOM, choose the right encoding
+    for bom, encoding in [
+        (b"\xff\xfe\x00\x00", "utf-32-le"),
+        (b"\x00\x00\xfe\xff", "utf-32-be"),
+        (b"\xff\xfe",         "utf-16-le"),
+        (b"\xfe\xff",         "utf-16-be"),
+        (b"\xef\xbb\xbf",    "utf-8"),
+    ]:
+        if raw.startswith(bom):
+            raw = raw[len(bom):]
+            break
+    else:
+        encoding = "utf-8"   # no BOM — assume utf-8 (covers ASCII too)
+
+    content = raw.decode(encoding, errors="replace")
+    return np.genfromtxt(io.StringIO(content), **kwargs)
