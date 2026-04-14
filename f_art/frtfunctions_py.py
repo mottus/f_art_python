@@ -20,7 +20,7 @@ def hetk8s_singledirection(theta_vec, l_elli, shl, stdns, htr, hc1, hc2, rcr, db
     hc1: crown length, ellipse / conical part [m]
     hc2: crown length, cylinder [m]
     rcr: crown radius [m]
-    dbh: trunk diameter at brest height [m]
+    dbh: trunk diameter at breast height [m]
     FGI: Fischer's grouping index
     ulg: uuu / 2 (=uuu*G?)???, uuu: effective plant area density (leaves corrected for clumping + branches)
 
