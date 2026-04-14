@@ -133,7 +133,17 @@ class frt_model:
                     return
         # check existence of spectral data
         self.frtconf = deepcopy(frtconf) # just in case :), we will modify frtconf while loading
-        wl = self.frtconf['wl']
+        # first, load wavelengths
+        if 'wl' in self.frtconf.keys(): 
+            wl = self.frtconf['wl']
+        elif 'wlFile' in self.frtconf.keys(): # check for data file name
+            with open( self.frtconf['wlFile'], 'rt', encoding='utf-8', errors='ignore' ) as f:
+                Q = np.genfromtxt( f )
+                wl =  Q[:,0]
+        else:
+            print("frt_model.load_conf(): Required key wl[File] missing. Aborting")
+            return
+            
         SpectralKeys = [ 'rDDground', 'rDSground', 'rSDground', 'rSSground', 'WaxRefrInd', 'SQratio']
         for key in SpectralKeys:
             if key not in self.frtconf.keys(): # check for data file name

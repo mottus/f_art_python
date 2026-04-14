@@ -8,7 +8,7 @@ frtconf = {} # create empty dict
 frtconf['nquad_t'] = 7 # Optional: number of cubature knots oer the polar angle (theta)
 frtconf['nquad_p'] = 7 # Optional: number of cubature knots oer the azimuth angle (phi) in the range [0,pi) (model is symmetrical)
 frtconf['nzs'] = 4 # Optional: no. of canopy layers (used to integrate numerically 1st order reflectance). A reasonable default value has been set in code.
-frtconf['wlcorr'] = 0 # Optional: the wavelength or thewavelength index for which the correction between first-order and higher order submodels is computed.
+frtconf['wlcorr'] = 0 # Optional: the wavelength or the wavelength index for which the correction between first-order and higher order submodels is computed.
 # By default, all wavelengths are used (value 0). A positive value indicates wavelength and is matched against wl (closest value is found); a negative value (should be integer) is index in wl.
 # set to a very large negative value (out of bounds index, e.g., -1000000) to disable correction
 
@@ -26,6 +26,7 @@ frtconf['wl'] = [ 450, 480, 510, 540, 570 ]
 #   length requirement for all other input spectral vectors. For spectral data read from
 #   external files, the values will be interpolated to the values in wl
 frtconf['SQratio'] = np.ones_like( frtconf['wl'] )*1.0 # S/Q ratio: ratio of direct to total irradiance. Vector of the same length as wl
+# alternatively, the name of a two-column file can be specified in frtconf['SQratioFile'] to be read and interpolated at initialization
 
 frtconf['i1'] = 1 # Optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to 1. Note: indexing starts from 1 (human, not python style)
 frtconf['i2'] = len(frtconf['wl']) # optional: the the beginning of subset (first index) of the wavelengths used in the computations. Defaults to len(wl)
