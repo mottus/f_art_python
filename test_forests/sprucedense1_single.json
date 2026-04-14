@@ -171,12 +171,12 @@
       "BAILAI": 0.25,
       "ShootClumping": 0.64,
       "ShootLength": 0.05,
-      "LeafReflFile": "foliage_PiceaAbies_FIN-3.txt",
+      "LeafReflFile": "foliage_PiceaAbies_FIN.txt",
       "BranchReflFile": "branch_PiceaAbies.txt",
       "TrunkReflFile": "branch_PiceaAbies.txt",
       "WaxCorrectionFactor": 1,
       "ScaleNeedle": true
     }
   ],
-  "SQratioFile": "SQratio.txt"
+  "SQratioFile": "SQratio_CleanRuralLowSun.txt"
 }

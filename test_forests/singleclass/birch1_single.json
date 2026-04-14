@@ -171,12 +171,12 @@
       "BAILAI": 0.22,
       "ShootClumping": 1,
       "ShootLength": 0.1,
-      "LeafReflFile": "foliage_BetulaPendula_FIN-2.txt",
+      "LeafReflFile": "foliage_BetulaPendula_FIN_adax.txt",
       "BranchReflFile": "branch_BetulaPendula.txt",
       "TrunkReflFile": "branch_BetulaPendula.txt",
       "WaxCorrectionFactor": 1,
       "ScaleNeedle": false
     }
   ],
-  "SQratioFile": "SQratio.txt"
+  "SQratioFile": "SQratio_CleanRuralLowSun.txt"
 }

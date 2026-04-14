@@ -15,7 +15,11 @@ from f_art.frtclass import frt_model
 import matplotlib.pyplot as plt
 
 current_dir = Path(__file__).resolve().parent
-spectradir = str( current_dir / "test_forests" / "spectraldata" )
+
+# MODIFY THIS AS NEEDED:
+spectradir = str( current_dir / "data" )
+
+# variables for conistent plotting
 # the spectral plot to be updated during the script. A new one is created when closed
 fig = None
 ax = None
@@ -530,7 +534,7 @@ paned.pack(fill=tk.BOTH, expand=True)
  
 # JSON tree panel
 tree_frame = ttk.LabelFrame(paned, text="JSON content  (double-click a value to edit)", padding=4)
-paned.add(tree_frame, weight=2)
+paned.add(tree_frame, weight=3)
  
 tree = ttk.Treeview(tree_frame, show="tree", selectmode="browse")
 tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -760,9 +764,9 @@ tree.bind("<Button-3>", on_tree_right_click)
  
 # output panel
 out_frame = ttk.LabelFrame(paned, text="Output", padding=4)
-paned.add(out_frame, weight=1)
+paned.add(out_frame, weight=2)
  
-output_text = tk.Text(out_frame, wrap=tk.NONE, font=("Courier", 11))
+output_text = tk.Text(out_frame, wrap=tk.NONE, font=("Courier", 9))
 output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 ttk.Scrollbar(out_frame, orient=tk.VERTICAL,
               command=output_text.yview).pack(side=tk.RIGHT, fill=tk.Y)
@@ -777,4 +781,13 @@ if os.path.isdir(_startup_folder):
     folder_entry.config(text=_startup_folder)
     load_files(_startup_folder)
  
+def _set_sash():
+    root.update_idletasks()
+    total = paned.winfo_height()
+    if total > 10:
+        paned.sashpos(0, int(total * 0.60))
+    else:
+        root.after(100, _set_sash)   # retry if not drawn yet
+ 
+root.after(200, _set_sash)
 root.mainloop()
