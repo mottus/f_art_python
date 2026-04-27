@@ -40,3 +40,7 @@ frt
 *.out
 *.app
 spectra
+test_forests/temp.json
+test_forests/temp2.json
+test_forests/sprucesparse1_copy.json
+test_forests/sprucesparse1_copy_modified.json

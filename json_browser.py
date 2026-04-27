@@ -25,6 +25,13 @@ fig = None
 ax = None
 colorN = 0
 
+# ── copy/paste clipboard ──────────────────────────────────────────────────────
+# clipboard holds: {'key': str, 'value': any, 'is_tree_class': bool}
+# key is the top-level JSON key (e.g. 'thetv', 'TreeClasses')
+# value is a deepcopy of the data at that key (or the single tree-class dict)
+_clipboard = None   # None means empty
+_has_unsaved_edits = False   # True when current_data differs from the file on disk
+
 
 # ── runs when the Run FRT button is pressed ───────────────────────────────────
 
@@ -119,6 +126,8 @@ def mark_edited():
     - Restores the listbox highlight that gets cleared when focus moves to
       the inline entry widget.
     """
+    global _has_unsaved_edits
+    _has_unsaved_edits = True
     tree_frame.config(text=_JSON_FRAME_BASE + "  [edited]")
     # restore listbox highlight: find which entry matches the current file
     # and re-select it without triggering on_listbox_select (which would reload)
@@ -137,6 +146,8 @@ def clear_edited():
     Called when a fresh file is loaded.
     Removes the '[edited]' marker from the frame title.
     """
+    global _has_unsaved_edits
+    _has_unsaved_edits = False
     tree_frame.config(text=_JSON_FRAME_BASE)
  
  
@@ -202,13 +213,24 @@ edit_entry = None   # the floating Entry widget when editing
  
  
 def is_list_node(item):
-    """Return the list's key name if this tree item is a list branch, else None."""
+    """Return the list's key name if this tree item is a replaceable list branch, else None.
+    Only matches lists whose children are scalar leaves (i.e. data arrays),
+    not lists of dicts/sub-lists such as TreeClasses."""
     text = tree.item(item, "text")
     # list branch labels look like  "key  [N]"
-    if "  [" in text and text.endswith("]") and ":" not in text:
-        key = text.split("  [")[0].strip()
-        return key if key else None
-    return None
+    if not ("  [" in text and text.endswith("]") and ":" not in text):
+        return None
+    key = text.split("  [")[0].strip()
+    if not key:
+        return None
+    # exclude lists whose children are objects or sub-lists (e.g. TreeClasses)
+    children = tree.get_children(item)
+    if children:
+        first_text = tree.item(children[0], "text")
+        # object children look like "0  {}" and list children like "0  [N]"
+        if first_text.endswith("}") or (first_text.endswith("]") and ":" not in first_text):
+            return None
+    return key
  
  
 def replace_list_with_file(item):
@@ -405,12 +427,105 @@ def load_files(folder):
     status_var.set(f"{len(files)} file(s) in {folder}")
  
  
+def _is_edited():
+    """Return True if the current file has unsaved changes."""
+    return _has_unsaved_edits
+
+
+def _confirm_switch(new_path):
+    """
+    If the current file has unsaved changes, ask the user what to do.
+    Returns True if it is safe to proceed with loading new_path, False to abort.
+
+    Three choices:
+      Save & switch  — write current_data to current_path in-place, then proceed.
+      Discard        — proceed without saving.
+      Cancel         — stay on the current file.
+    """
+    if not _is_edited() or current_data is None or current_path is None:
+        return True   # nothing to worry about
+
+    fname = os.path.basename(current_path)
+    dlg   = tk.Toplevel(root)
+    dlg.title("Unsaved changes")
+    dlg.resizable(False, False)
+    dlg.grab_set()          # modal
+    dlg.focus_set()
+
+    ttk.Label(dlg, text=f'"{fname}" has unsaved changes.',
+              padding=(16, 12, 16, 4)).pack()
+    ttk.Label(dlg, text="What would you like to do?",
+              padding=(16, 0, 16, 12)).pack()
+
+    btn_frame = ttk.Frame(dlg, padding=(12, 0, 12, 14))
+    btn_frame.pack()
+
+    choice = tk.StringVar(value="cancel")
+
+    def _pick(val):
+        choice.set(val)
+        dlg.destroy()
+
+    ttk.Button(btn_frame, text="Save & switch",
+               command=lambda: _pick("save")).pack(side=tk.LEFT, padx=(0, 6))
+    ttk.Button(btn_frame, text="Save copy & switch",
+               command=lambda: _pick("savecopy")).pack(side=tk.LEFT, padx=(0, 6))
+    ttk.Button(btn_frame, text="Discard",
+               command=lambda: _pick("discard")).pack(side=tk.LEFT, padx=(0, 6))
+    ttk.Button(btn_frame, text="Cancel",
+               command=lambda: _pick("cancel")).pack(side=tk.LEFT)
+
+    # centre dialog over root
+    root.update_idletasks()
+    rx, ry = root.winfo_rootx(), root.winfo_rooty()
+    rw, rh = root.winfo_width(), root.winfo_height()
+    dlg.update_idletasks()
+    dw, dh = dlg.winfo_width(), dlg.winfo_height()
+    dlg.geometry(f"+{rx + (rw - dw)//2}+{ry + (rh - dh)//2}")
+
+    dlg.wait_window()
+
+    if choice.get() == "save":
+        try:
+            with open(current_path, "w") as f:
+                json.dump(current_data, f, indent=2)
+            status_var.set(f"Saved: {os.path.basename(current_path)}")
+        except OSError as e:
+            status_var.set(f"Save error: {e}")
+            return False
+        return True
+    elif choice.get() == "savecopy":
+        new_fname = _write_copy(current_path, current_data)
+        if new_fname:
+            load_files(os.path.dirname(current_path))
+            status_var.set(f"Saved copy -> {new_fname}")
+        return True
+    elif choice.get() == "discard":
+        return True
+    else:   # cancel
+        # restore listbox highlight to the current file
+        if current_path:
+            cur_fname = os.path.basename(current_path)
+            items = list(listbox.get(0, tk.END))
+            if cur_fname in items:
+                idx = items.index(cur_fname)
+                listbox.selection_clear(0, tk.END)
+                listbox.selection_set(idx)
+                listbox.see(idx)
+        return False
+
+
 def on_listbox_select(event=None):
     selection = listbox.curselection()
     if not selection:
         return
     filename = listbox.get(selection[0])
-    open_file(os.path.join(folder_entry.cget("text"), filename))
+    new_path = os.path.join(folder_entry.cget("text"), filename)
+    if new_path == current_path:
+        return   # clicked the already-open file
+    if not _confirm_switch(new_path):
+        return   # user cancelled
+    open_file(new_path)
  
  
 def open_file(path):
@@ -425,6 +540,7 @@ def open_file(path):
         folder_entry.config(text=os.path.dirname(path))
         status_var.set(f"Loaded: {os.path.basename(path)}")
         run_btn.config(state=tk.NORMAL)
+        save_as_btn.config(state=tk.NORMAL)
         try:
             result = on_load(current_data)
             if result:
@@ -438,6 +554,7 @@ def open_file(path):
  
  
 def on_save_as():
+    global current_path
     if current_data is None:
         return
     folder    = os.path.dirname(current_path) if current_path else folder_entry.cget("text")
@@ -455,6 +572,9 @@ def on_save_as():
         return
     with open(path, "w") as f:
         json.dump(current_data, f, indent=2)
+    current_path = path
+    clear_edited()
+    load_files(os.path.dirname(path))
     status_var.set(f"Saved: {os.path.basename(path)}")
  
  
@@ -472,6 +592,309 @@ def on_run():
         status_var.set("Error — see output panel.")
  
  
+# ── copy / paste helpers ──────────────────────────────────────────────────────
+
+def _top_level_key_of(item):
+    """
+    Return the top-level JSON key name for any tree item.
+    E.g. clicking a leaf deep inside TreeClasses returns 'TreeClasses'.
+    Returns None if the item is not rooted at a top-level key.
+    """
+    current = item
+    while current:
+        parent = tree.parent(current)
+        if parent == "":          # direct child of invisible root → top-level key
+            text = tree.item(current, "text")
+            # strip branch suffix ("  {}" / "  [N]") or leaf suffix (":  value")
+            if ":  " in text:
+                return text.split(":  ")[0].strip()
+            elif "  " in text:
+                return text.split("  ")[0].strip()
+            return text.strip()
+        current = parent
+    return None
+
+
+def copy_item():
+    """
+    Copy the right-clicked item to the internal clipboard.
+
+    Two cases:
+      • Item is inside TreeClasses → copy that single tree-class dict.
+      • Otherwise → copy the entire top-level key/value pair.
+
+    Updates the paste button label to reflect what is in the buffer.
+    """
+    import copy
+    global _clipboard
+    item = tree_menu._target_item
+    if item is None or current_data is None:
+        return
+
+    top_key = _top_level_key_of(item)
+    if top_key is None:
+        return
+
+    child, tc_idx = _tc_index(item)
+
+    if tc_idx is not None:
+        # inside TreeClasses: copy the specific tree-class dict
+        tc = current_data["TreeClasses"][tc_idx]
+        desc = tc.get("Description", f"class {tc_idx}")
+        _clipboard = {
+            "key":           "TreeClasses",
+            "value":         copy.deepcopy(tc),
+            "is_tree_class": True,
+            "label":         f"tree class '{desc}'",
+        }
+    else:
+        # any other top-level key
+        val = current_data.get(top_key)
+        _clipboard = {
+            "key":           top_key,
+            "value":         copy.deepcopy(val),
+            "is_tree_class": False,
+            "label":         top_key,
+        }
+
+    _update_paste_button()
+    status_var.set(f"Copied: {_clipboard['label']}")
+
+
+def _update_paste_button():
+    """Relabel and enable/disable the paste button based on clipboard state."""
+    if _clipboard is None:
+        paste_btn.config(state=tk.DISABLED, text="Paste")
+    else:
+        paste_btn.config(state=tk.NORMAL,
+                         text=f"Paste {_clipboard['label']}")
+
+
+def on_paste():
+    """
+    Paste clipboard contents into the currently loaded JSON.
+
+    • is_tree_class=True  → append the tree-class dict to TreeClasses.
+    • is_tree_class=False → overwrite (or add) the top-level key in current_data.
+
+    Marks the document as edited and refreshes the tree.
+    """
+    import copy
+    global _clipboard
+    if _clipboard is None or current_data is None:
+        return
+
+    val   = copy.deepcopy(_clipboard["value"])   # paste a fresh copy each time
+    key   = _clipboard["key"]
+    label = _clipboard["label"]
+
+    if _clipboard["is_tree_class"]:
+        if "TreeClasses" not in current_data or not isinstance(current_data["TreeClasses"], list):
+            current_data["TreeClasses"] = []
+        current_data["TreeClasses"].append(val)
+        new_idx = len(current_data["TreeClasses"]) - 1
+        status_var.set(f"Pasted {label} as class {new_idx}.")
+    else:
+        new_idx = None
+        current_data[key] = val
+        status_var.set(f"Pasted {label}.")
+
+    load_tree(current_data)
+    mark_edited()
+
+    # after pasting a tree class, open TreeClasses and show the new entry
+    if new_idx is not None:
+        _expand_and_show_description(new_idx)
+
+
+# ── file list right-click menu ────────────────────────────────────────────────
+
+def _listbox_item_at(event):
+    """Return the filename under the cursor, or None."""
+    idx = listbox.nearest(event.y)
+    if idx < 0 or idx >= listbox.size():
+        return None
+    # nearest() can return a row even when the click is below all items;
+    # bbox() returns empty string when the index is out of the visible area.
+    bbox = listbox.bbox(idx)
+    if not bbox:
+        return None
+    # reject clicks below the last item's bottom edge
+    _, y0, _, h = bbox
+    if event.y > y0 + h:
+        return None
+    return listbox.get(idx)
+
+
+def _duplicate_file():
+    """Duplicate the right-clicked JSON file with a _copy suffix."""
+    fname = file_menu._target_fname
+    if not fname:
+        return
+    folder = folder_entry.cget("text")
+    src    = os.path.join(folder, fname)
+    stem, ext = os.path.splitext(fname)
+
+    # find a non-colliding name: stem_copy.json, stem_copy2.json, …
+    candidate = os.path.join(folder, stem + "_copy" + ext)
+    counter   = 2
+    while os.path.exists(candidate):
+        candidate = os.path.join(folder, f"{stem}_copy{counter}{ext}")
+        counter  += 1
+
+    try:
+        import shutil
+        shutil.copy2(src, candidate)
+    except OSError as e:
+        status_var.set(f"Error duplicating: {e}")
+        return
+
+    load_files(folder)
+    new_fname = os.path.basename(candidate)
+    # highlight the new file in the listbox
+    items = list(listbox.get(0, tk.END))
+    if new_fname in items:
+        idx = items.index(new_fname)
+        listbox.selection_clear(0, tk.END)
+        listbox.selection_set(idx)
+        listbox.see(idx)
+    status_var.set(f"Duplicated → {new_fname}")
+
+
+def _write_copy(src_path, data):
+    """
+    Write data as a new _modified[N].json in the same folder as src_path.
+    Strips any existing _modifiedN suffix to avoid chaining.
+    Returns the new filename on success, None on failure.
+    """
+    import re as _re
+    folder = os.path.dirname(src_path)
+    stem, ext = os.path.splitext(os.path.basename(src_path))
+    base_stem = _re.sub(r'_modified\d*$', '', stem)
+
+    candidate = os.path.join(folder, base_stem + "_modified" + ext)
+    counter = 2
+    while os.path.exists(candidate):
+        candidate = os.path.join(folder, f"{base_stem}_modified{counter}{ext}")
+        counter += 1
+
+    try:
+        with open(candidate, "w") as f:
+            json.dump(data, f, indent=2)
+    except OSError as e:
+        status_var.set(f"Error saving copy: {e}")
+        return None
+    return os.path.basename(candidate)
+
+
+def _save_copy_file():
+    """Called from the file right-click menu."""
+    fname = file_menu._target_fname
+    if not fname:
+        return
+    folder = folder_entry.cget("text")
+    src = os.path.join(folder, fname)
+    if current_path == src and current_data is not None:
+        data_to_write = current_data
+    else:
+        try:
+            with open(src) as f:
+                data_to_write = json.load(f)
+        except OSError as e:
+            status_var.set(f"Error reading source: {e}")
+            return
+    new_fname = _write_copy(src, data_to_write)
+    if new_fname:
+        load_files(folder)
+        items = list(listbox.get(0, tk.END))
+        if new_fname in items:
+            ni = items.index(new_fname)
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(ni)
+            listbox.see(ni)
+        status_var.set(f"Saved copy -> {new_fname}")
+
+def _rename_file():
+    """
+    Inline-rename the right-clicked JSON file.
+    Places a tk.Entry widget directly over the listbox row so the user
+    can type the new name and confirm with Enter (or cancel with Escape).
+    If the file is currently open, current_path is updated to match.
+    """
+    fname = file_menu._target_fname
+    if not fname:
+        return
+    folder = folder_entry.cget("text")
+
+    # find the listbox index of the target file
+    items = list(listbox.get(0, tk.END))
+    if fname not in items:
+        return
+    lb_idx = items.index(fname)
+
+    # get pixel bbox of that row inside the listbox widget
+    bbox = listbox.bbox(lb_idx)
+    if not bbox:
+        return
+    x, y, w, h = bbox
+
+    stem, ext = os.path.splitext(fname)
+    entry = tk.Entry(listbox, font=listbox.cget("font") or ("TkDefaultFont", 10))
+    entry.place(x=0, y=y, width=listbox.winfo_width(), height=h)
+    entry.insert(0, stem)        # pre-fill with current stem (no extension)
+    entry.select_range(0, tk.END)
+    entry.focus_set()
+
+    def _commit_rename(event=None):
+        global current_path
+        new_stem = entry.get().strip()
+        entry.destroy()
+        if not new_stem or new_stem == stem:
+            return   # empty or unchanged → cancel
+        new_fname = new_stem + ext
+        src  = os.path.join(folder, fname)
+        dest = os.path.join(folder, new_fname)
+        if os.path.exists(dest):
+            status_var.set(f"Rename failed: '{new_fname}' already exists.")
+            return
+        try:
+            os.rename(src, dest)
+        except OSError as e:
+            status_var.set(f"Rename error: {e}")
+            return
+        # update current_path if the renamed file was open
+        if current_path == src:
+            current_path = dest
+        load_files(folder)
+        # re-select renamed file
+        new_items = list(listbox.get(0, tk.END))
+        if new_fname in new_items:
+            ni = new_items.index(new_fname)
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(ni)
+            listbox.see(ni)
+        status_var.set(f"Renamed → {new_fname}")
+
+    def _cancel_rename(event=None):
+        entry.destroy()
+
+    entry.bind("<Return>",  _commit_rename)
+    entry.bind("<Escape>",  _cancel_rename)
+    entry.bind("<FocusOut>", _commit_rename)
+
+
+def on_listbox_right_click(event):
+    fname = _listbox_item_at(event)
+    if not fname:
+        return
+    # highlight the row under the cursor
+    idx = listbox.nearest(event.y)
+    listbox.selection_clear(0, tk.END)
+    listbox.selection_set(idx)
+    file_menu._target_fname = fname
+    file_menu.tk_popup(event.x_root, event.y_root)
+
+
 # ── build UI ─────────────────────────────────────────────────────────────────
 current_data = None
 current_path = None
@@ -503,29 +926,53 @@ ttk.Button(top, text="Browse…", command=browse_folder).grid(row=0, column=2, p
 ttk.Button(top, text="Refresh",
            command=lambda: load_files(folder_entry.cget("text"))).grid(row=0, column=3)
  
-# main area
+# main area — horizontal PanedWindow so the user can drag the file-list width
 main = ttk.Frame(root, padding=10)
 main.pack(fill=tk.BOTH, expand=True)
- 
-# left: file list
-left = ttk.Frame(main)
-left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
- 
+
+h_paned = ttk.PanedWindow(main, orient=tk.HORIZONTAL)
+h_paned.pack(fill=tk.BOTH, expand=True)
+
+# left: file list pane
+left = ttk.Frame(h_paned)
+h_paned.add(left, weight=0)   # weight=0: doesn't steal extra space on resize
+
 ttk.Label(left, text="Files").pack(anchor=tk.W)
-listbox = tk.Listbox(left, width=22, activestyle="dotbox")
-listbox.pack(fill=tk.Y, expand=True)
+
+lb_frame = ttk.Frame(left)
+lb_frame.pack(fill=tk.BOTH, expand=True)
+
+lb_yscroll = ttk.Scrollbar(lb_frame, orient=tk.VERTICAL)
+lb_xscroll = ttk.Scrollbar(lb_frame, orient=tk.HORIZONTAL)
+listbox = tk.Listbox(lb_frame, activestyle="dotbox",
+                     yscrollcommand=lb_yscroll.set,
+                     xscrollcommand=lb_xscroll.set)
+lb_yscroll.config(command=listbox.yview)
+lb_xscroll.config(command=listbox.xview)
+lb_xscroll.pack(side=tk.BOTTOM, fill=tk.X)
+lb_yscroll.pack(side=tk.RIGHT,  fill=tk.Y)
+listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 listbox.bind("<<ListboxSelect>>", on_listbox_select)
- 
+
+file_menu = tk.Menu(root, tearoff=0)
+file_menu._target_fname = None
+file_menu.add_command(label="Duplicate file",  command=_duplicate_file)
+file_menu.add_command(label="Rename file",     command=_rename_file)
+listbox.bind("<Button-3>", on_listbox_right_click)
+
 # right column
-right = ttk.Frame(main)
-right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+right = ttk.Frame(h_paned)
+h_paned.add(right, weight=1)  # weight=1: right pane gets all extra space
  
 # button bar — packed first so it is never squeezed out
 btn_bar = ttk.Frame(right)
 btn_bar.pack(side=tk.BOTTOM, fill=tk.X, pady=6)
 run_btn = ttk.Button(btn_bar, text="▶  Run FRT", command=on_run, state=tk.DISABLED)
 run_btn.pack(side=tk.LEFT, padx=(0, 6))
-ttk.Button(btn_bar, text="Save as…", command=on_save_as).pack(side=tk.LEFT, padx=(0, 6))
+save_as_btn = ttk.Button(btn_bar, text="Save as…", command=on_save_as, state=tk.DISABLED)
+save_as_btn.pack(side=tk.LEFT, padx=(0, 6))
+paste_btn = ttk.Button(btn_bar, text="Paste", command=on_paste, state=tk.DISABLED)
+paste_btn.pack(side=tk.LEFT, padx=(0, 6))
 ttk.Button(btn_bar, text="Close", command=on_close).pack(side=tk.LEFT)
  
 # paned window
@@ -604,6 +1051,13 @@ def delete_tree_class():
     load_tree(current_data)                # refresh tree view
     status_var.set(f"Deleted tree class {idx}.")
     mark_edited()
+    # re-open the TreeClasses branch so it doesn't collapse on the user
+    for top_item in tree.get_children(""):
+        if tree.item(top_item, "text").startswith("TreeClasses"):
+            tree.item(top_item, open=True)
+            # scroll to the branch so it stays visible
+            tree.see(top_item)
+            break
  
  
 def duplicate_tree_class():
@@ -632,6 +1086,33 @@ def duplicate_tree_class():
     mark_edited()
  
  
+def _expand_and_show_description(tc_idx):
+    """
+    After load_tree(), find the tree-class node at tc_idx inside TreeClasses,
+    expand it, locate the Description leaf, and scroll it into view.
+    """
+    # find the TreeClasses branch at the root level
+    for top_item in tree.get_children(""):
+        text = tree.item(top_item, "text")
+        if text.startswith("TreeClasses"):
+            # its direct children are the individual tree-class nodes ("0 {}", "1 {}", …)
+            tc_children = tree.get_children(top_item)
+            if tc_idx < len(tc_children):
+                tc_node = tc_children[tc_idx]
+                # expand the TreeClasses branch and the specific class node
+                tree.item(top_item, open=True)
+                tree.item(tc_node, open=True)
+                # find the Description leaf among the class's children
+                for leaf in tree.get_children(tc_node):
+                    if tree.item(leaf, "text").startswith("Description"):
+                        tree.see(leaf)
+                        tree.selection_set(leaf)
+                        return
+                # fallback: just scroll the class node into view
+                tree.see(tc_node)
+            return
+
+
 def add_description():
     """
     Add a Description key to the right-clicked tree class.
@@ -647,6 +1128,12 @@ def add_description():
     if idx is None:
         return
  
+    # expand the node so it is visible and bbox() returns valid coordinates
+    tc_parent = tree.parent(child)
+    if tc_parent:
+        tree.item(tc_parent, open=True)
+    tree.see(child)
+
     # place an inline entry over the tree class header node
     bbox = tree.bbox(child)   # use child (the "0 {}" node) for correct position
     if not bbox:
@@ -683,12 +1170,15 @@ def add_description():
         load_tree(current_data)
         status_var.set(f"Added Description '{desc}' to tree class {tc_idx}.")
         mark_edited()
+        # expand the tree class node and scroll the Description leaf into view
+        _expand_and_show_description(tc_idx)
  
     edit_entry.bind("<Return>",   _commit_desc)
     edit_entry.bind("<Escape>",   lambda e: cancel_edit())
     edit_entry.bind("<FocusOut>", _commit_desc)
  
  
+
 # ── right-click context menu ──────────────────────────────────────────────────
 # The menu is built once and reused.  The item that was under the cursor is
 # stored on the menu object itself (tree_menu._target_item) at right-click
@@ -703,57 +1193,57 @@ def add_description():
 #   "Replace list with file name…" → enabled only for list [N] nodes
 tree_menu = tk.Menu(root, tearoff=0)
 tree_menu._target_item = None
+tree_menu.add_command(label="Copy",                      command=copy_item)
+tree_menu.add_separator()
 tree_menu.add_command(label="Delete this tree class",    command=delete_tree_class)
 tree_menu.add_command(label="Duplicate this tree class", command=duplicate_tree_class)
 tree_menu.add_command(label="Add Description",           command=add_description)
 tree_menu.add_separator()
 tree_menu.add_command(label="Replace list with file name…",
                       command=lambda: replace_list_with_file(tree_menu._target_item))
- 
- 
+
+
 def on_tree_right_click(event):
     """
     Called when the user right-clicks anywhere on the tree.
- 
-    Steps:
-      1. Identify which row the cursor is over.
-      2. Highlight that row.
-      3. Check whether the row is inside TreeClasses (→ tree class options)
-         or is a list node (→ Replace list option).
-      4. Enable/disable each menu entry accordingly.
-      5. Store the item on the menu object so commands can access it later.
-      6. Pop up the menu at the cursor position.
- 
-    The menu is only shown if at least one entry applies.
-    Right-clicking on ordinary leaf values or non-list branch nodes shows nothing.
+
+    Shows a context menu for any tree item that has a top-level key:
+      • "Copy"                     → always available for any top-level item.
+      • Tree-class actions         → only inside TreeClasses.
+      • "Replace list with file…"  → only for list [N] branch nodes.
     """
-    item = tree.identify_row(event.y)   # row under the cursor (empty if none)
+    item = tree.identify_row(event.y)
     if not item:
-        return   # clicked on empty space — do nothing
- 
-    tree.selection_set(item)   # highlight the clicked row
- 
-    # determine what the clicked item is
-    child, idx  = _tc_index(item)
-    is_tc       = idx is not None                          # inside TreeClasses?
-    is_list     = is_list_node(item) is not None           # a list node [N]?
-    has_desc    = is_tc and _tc_has_description(idx)       # already has Description?
- 
-    if is_tc or is_list:
-        # save the item now — commands run later when the user clicks the entry
-        tree_menu._target_item = item
- 
-        # enable/disable each entry based on context
-        tree_menu.entryconfig("Delete this tree class",
-                              state=tk.NORMAL if is_tc   else tk.DISABLED)
-        tree_menu.entryconfig("Duplicate this tree class",
-                              state=tk.NORMAL if is_tc   else tk.DISABLED)
-        tree_menu.entryconfig("Add Description",
-                              state=tk.NORMAL if (is_tc and not has_desc) else tk.DISABLED)
-        tree_menu.entryconfig("Replace list with file name…",
-                              state=tk.NORMAL if is_list else tk.DISABLED)
- 
-        # show the menu at the screen coordinates of the mouse cursor
+        return
+
+    tree.selection_set(item)
+    tree_menu._target_item = item
+
+    top_key  = _top_level_key_of(item)
+    child, idx = _tc_index(item)
+    is_tc    = idx is not None
+    is_list  = is_list_node(item) is not None
+    has_desc = is_tc and _tc_has_description(idx)
+
+    # "Copy" is available whenever the item belongs to a top-level key
+    has_top = top_key is not None and current_data is not None
+    tree_menu.entryconfig("Copy",
+                          state=tk.NORMAL if has_top else tk.DISABLED)
+
+    # tree-class actions
+    tree_menu.entryconfig("Delete this tree class",
+                          state=tk.NORMAL if is_tc else tk.DISABLED)
+    tree_menu.entryconfig("Duplicate this tree class",
+                          state=tk.NORMAL if is_tc else tk.DISABLED)
+    tree_menu.entryconfig("Add Description",
+                          state=tk.NORMAL if (is_tc and not has_desc) else tk.DISABLED)
+
+    # list replacement
+    tree_menu.entryconfig("Replace list with file name…",
+                          state=tk.NORMAL if is_list else tk.DISABLED)
+
+    # show menu only if at least Copy or one other option is applicable
+    if has_top or is_tc or is_list:
         tree_menu.tk_popup(event.x_root, event.y_root)
  
  
@@ -783,9 +1273,11 @@ if os.path.isdir(_startup_folder):
  
 def _set_sash():
     root.update_idletasks()
-    total = paned.winfo_height()
-    if total > 10:
+    total   = paned.winfo_height()
+    total_w = h_paned.winfo_width()
+    if total > 10 and total_w > 10:
         paned.sashpos(0, int(total * 0.60))
+        h_paned.sashpos(0, 220)   # initial file-list width in pixels
     else:
         root.after(100, _set_sash)   # retry if not drawn yet
  
